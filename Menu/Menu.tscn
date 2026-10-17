@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://cqrflvh78l433" path="res://Menu/menu.gd" id="1_jf1j2"]
 [ext_resource type="AudioStream" uid="uid://jpgs7e37myr4" path="res://Menu/musica_menu.ogg" id="2_e56cd"]
 [ext_resource type="FontFile" uid="uid://bhsy0hkqq7q5o" path="res://Fontes/Fonte Titulo/CinzelDecorative-Bold.ttf" id="2_u03px"]
+[ext_resource type="VideoStream" uid="uid://bmkpd236k31tt" path="res://Menu/menu_animado.ogv" id="2_w32jx"]
 [ext_resource type="FontFile" uid="uid://dab46nieig243" path="res://Fontes/Fonte Opções/Kalam/Kalam-Regular.ttf" id="3_crea4"]
 
 [node name="Menu" type="Control" unique_id=935048506]
@@ -13,6 +14,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_jf1j2")
+video_fundo = ExtResource("2_w32jx")
 fonte_titulo = ExtResource("2_u03px")
 fonte_opcoes = ExtResource("3_crea4")
 cena_do_jogo = "uid://b8d5fyhhs02ny"
@@ -30,7 +32,7 @@ layout_mode = 0
 layout_mode = 0
 offset_left = 100.0
 offset_top = 90.0
-text = "Nome do Jogo"
+text = "immutable roots"
 
 [node name="Opcoes" type="VBoxContainer" parent="." unique_id=853424006]
 layout_mode = 0

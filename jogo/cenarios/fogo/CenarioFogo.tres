@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="Cenario" format=3 uid="uid://ltm7xkyifh0p"]
+
+[ext_resource type="Script" uid="uid://dl2k744moq82h" path="res://jogo/cenarios/camada_parallax.gd" id="1_fosmp"]
+[ext_resource type="Texture2D" uid="uid://b1by57qbag5dl" path="res://jogo/cenarios/fogo/fundo.png" id="2_40spn"]
+[ext_resource type="Texture2D" uid="uid://brl1v66pb1md4" path="res://jogo/cenarios/fogo/meio.png" id="3_mitc0"]
+[ext_resource type="Texture2D" uid="uid://bv0mbwjtcd6dj" path="res://jogo/cenarios/fogo/chao.png" id="4_nsfql"]
+[ext_resource type="Script" uid="uid://cnlb0itva3kow" path="res://jogo/cenarios/cenario.gd" id="5_qikif"]
+
+[sub_resource type="Resource" id="Resource_r4x0f"]
+script = ExtResource("1_fosmp")
+textura = ExtResource("2_40spn")
+velocidade = 0.05
+altura = 191.0
+espelhar_ao_repetir = false
+
+[sub_resource type="Resource" id="Resource_u6yeg"]
+script = ExtResource("1_fosmp")
+textura = ExtResource("3_mitc0")
+
+[sub_resource type="Resource" id="Resource_apk8s"]
+script = ExtResource("1_fosmp")
+textura = ExtResource("4_nsfql")
+velocidade = 1.0
+altura = -205.0
+
+[resource]
+script = ExtResource("5_qikif")
+nome = "Vulcão"
+ceu_topo = Color(0.31764707, 0.050980393, 0.0627451, 1)
+ceu_horizonte = Color(0.5137255, 0.08627451, 0.101960786, 1)
+altura_horizonte = 0.6
+camadas = Array[ExtResource("1_fosmp")]([SubResource("Resource_r4x0f"), SubResource("Resource_u6yeg"), SubResource("Resource_apk8s")])
+particulas = 1

@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://ckinqblaopbjo"]
+
+[ext_resource type="Script" uid="uid://c5a12orujvft7" path="res://jogo/dragao.gd" id="1_g7354"]
+[ext_resource type="Texture2D" uid="uid://bkk3qpjklkfga" path="res://Biblioteca/artes/ataque_dragao.png" id="2_sfqqw"]
+[ext_resource type="Texture2D" uid="uid://cl3242wtp3bkv" path="res://jogo/player/ataque_fogo_mago.png" id="3_0ckyn"]
+[ext_resource type="Texture2D" uid="uid://csayjnxy4elul" path="res://jogo/player/ataque_agua_mago.png" id="4_vb84f"]
+[ext_resource type="Texture2D" uid="uid://bw3jl2arlfs3y" path="res://Biblioteca/artes/ataque_terra_mago.png" id="5_vbv3r"]
+[ext_resource type="Texture2D" uid="uid://buj11upij55pn" path="res://jogo/player/ataque_vento_mago.png" id="6_wbi0p"]
+[ext_resource type="Resource" uid="uid://dp268syb71a5i" path="res://jogo/cenarios/ancestral/CenarioAncestral.tres" id="7_1c8v8"]
+
+[node name="DragaoAncestral" type="Node2D" unique_id=1174915077]
+script = ExtResource("1_g7354")
+nome = "Dragão Ancestral"
+chance_principal = 0.25
+resistencias = Array[int]([])
+fraquezas = Array[int]([])
+cor = Color(0.95, 0.82, 0.38, 1)
+icones = Array[Texture2D]([null, null, null, null])
+projetil_dragao = ExtResource("2_sfqqw")
+projeteis_jogador = Array[Resource]([ExtResource("3_0ckyn"), ExtResource("4_vb84f"), ExtResource("5_vbv3r"), ExtResource("6_wbi0p")])
+cenario = ExtResource("7_1c8v8")
+vida_maxima = 300.0
+tamanho_sequencia = 5
+tamanho_sequencia_furioso = 6
+tempo_resposta = 3.4
+intervalo_ataques = 0.9
+magias_por_abertura = 5
+jeito_aleatorio = true
+resistencia_geral = 0.75
+acelerar_mundo = 1.1

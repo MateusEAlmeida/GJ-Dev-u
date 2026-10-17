@@ -1,5 +1,9 @@
 extends Node2D
-
+## Runner: obstáculos, velocidade crescente, pontos, vidas, combo, recorde, pausa e game over.
+## Coloque este script no nó raiz "Jogo". Ele precisa de dois filhos:
+##   player       -> o mago (CharacterBody2D)
+##   StaticBody2D -> o chão
+## Todo o resto (obstáculos, HUD, telas) é criado pelo script.
 
 signal marco_de_pontos(numero: int)   ## a cada 5000 pontos (para trocar o cenário depois)
 
@@ -9,18 +13,32 @@ signal marco_de_pontos(numero: int)   ## a cada 5000 pontos (para trocar o cená
 @export_group("Arte (opcional)")
 @export var texturas_obstaculos: Array[Texture2D] = []   ## vazio = obstáculos provisórios
 @export var escala_pixel_art: float = 5.0                ## mesma escala do mago
-@export var textura_coracao: Texture2D                   ## vazio = coração provisório (talvez mudar pra barra de vida)
+@export var textura_coracao: Texture2D                   ## vazio = coração provisório
 @export var fonte_hud: Font
+
+@export_group("Cenário")
+@export var cenario_inicial: Resource        ## vazio = usa o cenário do primeiro dragão
+@export var tempo_transicao: float = 3.0     ## segundos para um cenário virar o outro
+
+@export_group("Música")
+@export var musica_corrida: AudioStream      ## reserva: usada se o cenário não tiver música
+@export_range(-40.0, 6.0, 0.5) var volume_musica_db: float = -8.0
 
 @export_group("Dificuldade")
 @export var velocidade_inicial: float = 480.0
 @export var velocidade_maxima: float = 1150.0
 @export var aceleracao: float = 9.0          ## quanto a velocidade sobe por segundo
 @export var vidas_maximas: int = 3
-@export var tempo_invencivel: float = 1.2   ##tempo de invencibilidade
+@export var tempo_invencivel: float = 1.2    ## depois de levar dano
 @export var acertos_por_multiplicador: int = 5
 @export var multiplicador_maximo: int = 5
 @export var pontos_por_marco: int = 5000
+
+@export_group("Dragões")
+@export var dragoes: Array[PackedScene] = []     ## em ordem: Fogo, Água, Terra, Ar...
+@export var segundos_ate_dragao: float = 20.0    ## corrida antes de cada dragão aparecer
+@export var espaco_extra_na_luta: float = 1.5    ## obstáculos mais espaçados durante a luta
+@export var bonus_por_dragao: int = 1000
 
 @export_group("Limites do jogador")
 @export var x_minimo: float = 80.0
@@ -49,7 +67,19 @@ var pode_reiniciar := false
 var chao_y := 1000.0
 var largura_tela := 1920.0
 
+var dragao_atual: Node2D = null
+var velocidade_bonus := 1.0      # o dragão pode acelerar o mundo durante a luta
+var indice_dragao := 0
+var tempo_sem_dragao := 0.0
+var recorde_dragao := 0
+
 var obstaculos: Node2D
+var camada_fundo: CanvasLayer
+var cenario_atual: Resource
+var raiz_cenario: Node2D
+var camadas_vivas: Array = []     # [sprite, camada, deslocamento]
+var musica_a: AudioStreamPlayer
+var musica_b: AudioStreamPlayer
 var pedrinhas: Array[ColorRect] = []
 
 var hud: CanvasLayer
@@ -57,10 +87,12 @@ var lbl_pontos: Label
 var lbl_recorde: Label
 var lbl_combo: Label
 var lbl_aviso: Label
+var lbl_dragao: Label
 var caixa_vidas: HBoxContainer
 var painel_fim: Control
 var lbl_fim_pontos: Label
 var lbl_fim_recorde: Label
+var lbl_fim_dragao: Label
 var painel_pausa: Control
 
 
@@ -84,6 +116,8 @@ func _ready() -> void:
 
 	_criar_pedrinhas()
 	_criar_hud()
+	_criar_musica()
+	_iniciar_cenario()
 	distancia_ate_proximo = largura_tela * 0.6
 	_mostrar_aviso("CORRA!", COR_TEXTO)
 
@@ -93,7 +127,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	velocidade = minf(velocidade_maxima, velocidade + aceleracao * delta)
-	var andou := velocidade * delta
+	var andou := velocidade * velocidade_bonus * delta
 
 	# Pontos (o multiplicador do combo entra aqui)
 	pontos += andou * 0.1 * multiplicador
@@ -103,7 +137,14 @@ func _physics_process(delta: float) -> void:
 	distancia_ate_proximo -= andou
 	if distancia_ate_proximo <= 0.0:
 		var largura := _criar_obstaculo()
-		distancia_ate_proximo = largura + _distancia_do_pulo() * _fator_espaco()
+		var extra := espaco_extra_na_luta if dragao_atual else 1.0
+		distancia_ate_proximo = largura + _distancia_do_pulo() * _fator_espaco() * extra
+
+	# Próximo dragão depois de um trecho de corrida
+	if dragao_atual == null and indice_dragao < dragoes.size():
+		tempo_sem_dragao += delta
+		if tempo_sem_dragao >= segundos_ate_dragao:
+			_chamar_dragao()
 
 	# Move os obstáculos e conta os que o mago já passou
 	for o in obstaculos.get_children():
@@ -113,6 +154,8 @@ func _physics_process(delta: float) -> void:
 			_somar_combo()
 		if o.position.x < -400:
 			o.queue_free()
+
+	_mover_cenario(andou, delta)
 
 	# Pedrinhas do chão dão a sensação de velocidade
 	for p in pedrinhas:
@@ -247,6 +290,254 @@ func _checar_marcos() -> void:
 		_mostrar_aviso("NOVO RECORDE!", COR_DESTAQUE)
 
 
+# ================================================================ música
+
+func _criar_musica() -> void:
+	musica_a = AudioStreamPlayer.new()
+	musica_b = AudioStreamPlayer.new()
+	for p in [musica_a, musica_b]:
+		p.volume_db = -60.0
+		add_child(p)
+
+
+## Troca a música com uma transição suave (os dragões chamam isto ao entrar).
+func trocar_musica(stream: AudioStream, duracao: float = 1.2) -> void:
+	if stream == null:
+		return
+	stream.set("loop", true)
+	var sai := musica_a if musica_a.playing else null
+	var entra := musica_b if sai == musica_a else musica_a
+	if sai == null:
+		sai = musica_b
+	entra.stream = stream
+	entra.volume_db = -40.0
+	entra.play()
+	var t := create_tween().set_parallel(true)
+	t.tween_property(entra, "volume_db", volume_musica_db, duracao)
+	if sai.playing:
+		t.tween_property(sai, "volume_db", -60.0, duracao)
+		t.chain().tween_callback(sai.stop)
+
+
+## Chamado pelo dragão quando ele começa a morrer: já vai para o cenário e a música do próximo.
+func voltar_musica_corrida() -> void:
+	var proximo := _cenario_do_dragao(indice_dragao + 1)
+	if proximo and proximo != cenario_atual:
+		mudar_cenario(proximo)
+	else:
+		_tocar_musica_do_cenario(cenario_atual, 2.0)
+
+
+func _tocar_musica_do_cenario(c: Resource, duracao: float) -> void:
+	var m: AudioStream = c.musica if c and c.get("musica") else musica_corrida
+	if m:
+		trocar_musica(m, duracao)
+
+
+# ================================================================ cenário (parallax)
+
+func _cenario_do_dragao(i: int) -> Resource:
+	if i < 0 or i >= dragoes.size() or dragoes[i] == null:
+		return null
+	var d := dragoes[i].instantiate()          # só para ler o campo; não entra na cena
+	var c: Resource = d.get("cenario")
+	d.free()
+	return c
+
+
+func _iniciar_cenario() -> void:
+	camada_fundo = CanvasLayer.new()
+	camada_fundo.layer = -10                    # atrás de tudo
+	add_child(camada_fundo)
+	var c := cenario_inicial if cenario_inicial else _cenario_do_dragao(0)
+	if c:
+		cenario_atual = c
+		raiz_cenario = _montar_cenario(c)
+		camada_fundo.add_child(raiz_cenario)
+		for p in pedrinhas:                     # com cenário de verdade, as pedrinhas provisórias somem
+			p.visible = false
+	_tocar_musica_do_cenario(c, 1.0)
+
+
+## Troca de cenário com transição suave (imagem e música juntas).
+func mudar_cenario(c: Resource) -> void:
+	if c == null or c == cenario_atual:
+		return
+	cenario_atual = c
+	var antigo := raiz_cenario
+	raiz_cenario = _montar_cenario(c)
+	raiz_cenario.modulate.a = 0.0
+	camada_fundo.add_child(raiz_cenario)       # o novo nasce por cima do antigo, invisível
+	var t := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	t.tween_property(raiz_cenario, "modulate:a", 1.0, tempo_transicao)
+	if antigo:
+		t.tween_callback(func():
+			camadas_vivas = camadas_vivas.filter(func(cv): return is_instance_valid(cv[0]) and cv[0].get_parent() != antigo)
+			antigo.queue_free())
+	_tocar_musica_do_cenario(c, tempo_transicao)
+
+
+func _montar_cenario(c: Resource) -> Node2D:
+	var raiz := Node2D.new()
+	raiz.add_child(_ceu(c))
+	for camada in c.camadas:
+		if camada == null or camada.textura == null:
+			continue
+		var s := Sprite2D.new()
+		s.texture = camada.textura
+		s.centered = false
+		s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		s.texture_repeat = CanvasItem.TEXTURE_REPEAT_MIRROR if camada.espelhar_ao_repetir else CanvasItem.TEXTURE_REPEAT_ENABLED
+		s.region_enabled = true
+		var tam: Vector2 = camada.textura.get_size()
+		s.region_rect = Rect2(0, 0, ceilf(largura_tela / camada.escala) + 2, tam.y)
+		s.scale = Vector2.ONE * camada.escala
+		s.modulate = camada.cor
+		s.position = Vector2(0, chao_y - camada.altura - tam.y * camada.escala)
+		raiz.add_child(s)
+		camadas_vivas.append([s, camada, randf() * tam.x])
+	var p := _particulas(c)
+	if p:
+		raiz.add_child(p)
+	return raiz
+
+
+func _mover_cenario(andou: float, delta: float) -> void:
+	for cv in camadas_vivas:
+		var s: Sprite2D = cv[0]
+		if not is_instance_valid(s):
+			continue
+		var camada: Resource = cv[1]
+		cv[2] += (andou * camada.velocidade + camada.vento * delta) / camada.escala
+		var w: float = camada.textura.get_size().x * (2.0 if camada.espelhar_ao_repetir else 1.0)
+		cv[2] = fmod(cv[2], w)
+		s.region_rect.position.x = floorf(cv[2])   # anda de pixel em pixel (sem borrar)
+
+
+func _ceu(c: Resource) -> TextureRect:
+	# Céu em faixas de cor, como em pixel art (sem degradê liso)
+	var altura := 216
+	var img := Image.create(1, altura, false, Image.FORMAT_RGB8)
+	for y in altura:
+		var t := clampf(float(y) / (altura * c.altura_horizonte), 0.0, 1.0)
+		t = floorf(pow(t, 1.3) * c.faixas_ceu) / float(c.faixas_ceu - 1)
+		img.set_pixel(0, y, c.ceu_topo.lerp(c.ceu_horizonte, clampf(t, 0.0, 1.0)))
+	var r := TextureRect.new()
+	r.texture = ImageTexture.create_from_image(img)
+	r.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	r.stretch_mode = TextureRect.STRETCH_SCALE
+	r.size = get_viewport_rect().size
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return r
+
+
+func _particulas(c: Resource) -> CPUParticles2D:
+	if c.particulas == 0 or c.quantidade <= 0:
+		return null
+	var p := CPUParticles2D.new()
+	var tela := get_viewport_rect().size
+	p.amount = c.quantidade
+	p.lifetime = 6.0
+	p.preprocess = 6.0
+	p.color = c.cor_particulas
+	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	p.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	# 0 nenhuma, 1 brasas, 2 chuva, 3 areia, 4 vento, 5 neve
+	match int(c.particulas):
+		1:      # sobem do chão, balançando
+			p.position = Vector2(tela.x / 2, chao_y + 40)
+			p.emission_rect_extents = Vector2(tela.x * 0.6, 20)
+			p.direction = Vector2(-0.35, -1)
+			p.spread = 18
+			p.gravity = Vector2(-40, -25)
+			p.initial_velocity_min = 40
+			p.initial_velocity_max = 110
+			p.scale_amount_min = 4
+			p.scale_amount_max = 6
+			var cr := Gradient.new()
+			cr.set_color(0, c.cor_particulas)
+			cr.set_color(1, Color(c.cor_particulas, 0.0))
+			p.color_ramp = cr
+		2:
+			p.position = Vector2(tela.x / 2 + 200, -40)
+			p.emission_rect_extents = Vector2(tela.x * 0.7, 10)
+			p.direction = Vector2(-0.25, 1)
+			p.spread = 2
+			p.gravity = Vector2.ZERO
+			p.initial_velocity_min = 900
+			p.initial_velocity_max = 1100
+			p.lifetime = 1.4
+			p.preprocess = 2.0
+			p.scale_amount_min = 3
+			p.scale_amount_max = 3
+			p.particle_flag_align_y = true
+			p.scale_amount_curve = null
+			p.texture = _tex_risco(1, 5)
+		3, 4:
+			p.position = Vector2(tela.x + 40, tela.y * 0.55)
+			p.emission_rect_extents = Vector2(10, tela.y * 0.45)
+			p.direction = Vector2(-1, 0.05)
+			p.spread = 6
+			p.gravity = Vector2(0, 8)
+			p.initial_velocity_min = 500 if c.particulas == 3 else 700
+			p.initial_velocity_max = 800 if c.particulas == 3 else 1000
+			p.lifetime = 3.5
+			p.preprocess = 4.0
+			p.scale_amount_min = 3 if c.particulas == 3 else 2
+			p.scale_amount_max = 5 if c.particulas == 3 else 2
+			if c.particulas == 4:
+				p.texture = _tex_risco(8, 1)
+		5:
+			p.position = Vector2(tela.x / 2, -20)
+			p.emission_rect_extents = Vector2(tela.x * 0.6, 10)
+			p.direction = Vector2(-0.3, 1)
+			p.spread = 20
+			p.gravity = Vector2(0, 20)
+			p.initial_velocity_min = 60
+			p.initial_velocity_max = 140
+			p.lifetime = 9.0
+			p.preprocess = 9.0
+			p.scale_amount_min = 4
+			p.scale_amount_max = 6
+	return p
+
+
+func _tex_risco(w: int, h: int) -> ImageTexture:
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	img.fill(Color.WHITE)
+	return ImageTexture.create_from_image(img)
+
+
+# ================================================================ dragões
+
+func _chamar_dragao() -> void:
+	var d: Node2D = dragoes[indice_dragao].instantiate()
+	d.set("jogo", self)
+	d.process_mode = Node.PROCESS_MODE_PAUSABLE
+	add_child(d)
+	dragao_atual = d
+	d.derrotado.connect(_ao_derrotar_dragao)
+
+
+func _ao_derrotar_dragao() -> void:
+	dragao_atual = null
+	velocidade_bonus = 1.0
+	# garante o cenário do próximo (caso o dragão não tenha avisado ao morrer)
+	var proximo := _cenario_do_dragao(indice_dragao + 1)
+	if proximo:
+		mudar_cenario(proximo)
+	indice_dragao += 1
+	tempo_sem_dragao = 0.0
+	pontos += bonus_por_dragao * indice_dragao
+	if indice_dragao >= dragoes.size():
+		_mostrar_aviso("VOCÊ VENCEU!", COR_DESTAQUE)   # (depois: tela de vitória)
+
+
+func _texto_dragao(n: int) -> String:
+	return "Dragão %d de %d" % [n, maxi(dragoes.size(), n)]
+
+
 # ================================================================ fim de jogo, pausa, recorde
 
 func _fim_de_jogo() -> void:
@@ -254,13 +545,22 @@ func _fim_de_jogo() -> void:
 		return
 	acabou = true
 	player.morrer()
+	for p in [musica_a, musica_b]:
+		if p.playing:
+			create_tween().tween_property(p, "volume_db", volume_musica_db - 14.0, 0.8)
 	var final := int(pontos)
+	var alcancado := indice_dragao + (1 if dragao_atual else 0)   # dragão em que chegou
+	if alcancado > recorde_dragao:
+		recorde_dragao = alcancado
 	var novo_recorde := final > recorde
 	if novo_recorde:
 		recorde = final
-		_salvar_recorde()
+	_salvar_recorde()
 
 	lbl_fim_pontos.text = "%d pontos" % final
+	if not dragoes.is_empty():
+		lbl_fim_dragao.text = ("Chegou ao " + _texto_dragao(alcancado) if alcancado > 0 else "Nenhum dragão alcançado") \
+			+ "     ·     Seu melhor: " + (_texto_dragao(recorde_dragao) if recorde_dragao > 0 else "-")
 	if novo_recorde and recorde_no_inicio > 0:
 		lbl_fim_recorde.text = "NOVO RECORDE!"
 		lbl_fim_recorde.add_theme_color_override("font_color", COR_DESTAQUE)
@@ -309,11 +609,13 @@ func _carregar_recorde() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(ARQUIVO_RECORDE) == OK:
 		recorde = int(cfg.get_value("jogo", "recorde", 0))
+		recorde_dragao = int(cfg.get_value("jogo", "recorde_dragao", 0))
 
 
 func _salvar_recorde() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("jogo", "recorde", recorde)
+	cfg.set_value("jogo", "recorde_dragao", recorde_dragao)
 	cfg.save(ARQUIVO_RECORDE)
 
 
@@ -378,6 +680,10 @@ func _criar_hud() -> void:
 	hud.add_child(caixa_vidas)
 	_atualizar_vidas()
 
+	lbl_dragao = _label("", 26, COR_APAGADA)
+	lbl_dragao.position = Vector2(42, 92)
+	hud.add_child(lbl_dragao)
+
 	lbl_pontos = _label("0", 56, COR_TEXTO)
 	lbl_pontos.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	lbl_pontos.position = Vector2(w - 540, 20)
@@ -411,6 +717,8 @@ func _criar_hud() -> void:
 	caixa.add_child(lbl_fim_pontos)
 	lbl_fim_recorde = _centralizado(_label("", 34, COR_APAGADA))
 	caixa.add_child(lbl_fim_recorde)
+	lbl_fim_dragao = _centralizado(_label("", 34, COR_TEXTO))
+	caixa.add_child(lbl_fim_dragao)
 	caixa.add_child(_centralizado(_label("Espaço: tentar de novo     ·     Esc: menu", 28, COR_APAGADA)))
 
 	# Tela de pausa
@@ -447,6 +755,8 @@ func _atualizar_hud() -> void:
 	lbl_pontos.text = "%06d" % int(pontos)
 	lbl_recorde.text = "REC %06d" % maxi(recorde, int(pontos))
 	lbl_combo.text = ("COMBO %d   x%d" % [combo, multiplicador]) if combo > 0 else ""
+	if not dragoes.is_empty():
+		lbl_dragao.text = _texto_dragao(mini(indice_dragao + 1, dragoes.size()))
 
 
 func _atualizar_vidas() -> void:

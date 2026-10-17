@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="Cenario" format=3 uid="uid://co4tp616spo85"]
+
+[ext_resource type="Script" uid="uid://dl2k744moq82h" path="res://jogo/cenarios/camada_parallax.gd" id="1_02g81"]
+[ext_resource type="Texture2D" uid="uid://drshww7sr2hol" path="res://jogo/cenarios/ar/fundo.png" id="2_e88sb"]
+[ext_resource type="Texture2D" uid="uid://5inmn4ta5u21" path="res://jogo/cenarios/ar/meio.png" id="3_h1c41"]
+[ext_resource type="Texture2D" uid="uid://ceojktdoyrqxm" path="res://jogo/cenarios/ar/chao.png" id="4_6rvi2"]
+[ext_resource type="Script" uid="uid://cnlb0itva3kow" path="res://jogo/cenarios/cenario.gd" id="5_0c6y2"]
+
+[sub_resource type="Resource" id="Resource_qjw38"]
+script = ExtResource("1_02g81")
+textura = ExtResource("2_e88sb")
+velocidade = 0.05
+altura = 153.0
+espelhar_ao_repetir = false
+
+[sub_resource type="Resource" id="Resource_anu3r"]
+script = ExtResource("1_02g81")
+textura = ExtResource("3_h1c41")
+
+[sub_resource type="Resource" id="Resource_7lxy5"]
+script = ExtResource("1_02g81")
+textura = ExtResource("4_6rvi2")
+velocidade = 1.0
+altura = -145.0
+
+[resource]
+script = ExtResource("5_0c6y2")
+nome = "Floresta do Vento"
+ceu_topo = Color(0.105882354, 0.15686275, 0.24705882, 1)
+ceu_horizonte = Color(0.1764706, 0.25490198, 0.4, 1)
+altura_horizonte = 0.6
+camadas = Array[ExtResource("1_02g81")]([SubResource("Resource_qjw38"), SubResource("Resource_anu3r"), SubResource("Resource_7lxy5")])
+particulas = 4
+cor_particulas = Color(0.9, 0.95, 1, 0.35)
+quantidade = 50

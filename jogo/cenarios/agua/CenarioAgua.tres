@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="Cenario" format=3 uid="uid://d3d2ry0m7dghd"]
+
+[ext_resource type="Script" uid="uid://dl2k744moq82h" path="res://jogo/cenarios/camada_parallax.gd" id="1_yno1u"]
+[ext_resource type="Texture2D" uid="uid://lnc8s7nbs0bh" path="res://jogo/cenarios/agua/fundo.png" id="2_ar8qx"]
+[ext_resource type="Texture2D" uid="uid://sbv5ibv2q3t4" path="res://jogo/cenarios/agua/meio.png" id="3_ott2v"]
+[ext_resource type="Texture2D" uid="uid://csf0ef5ac58l5" path="res://jogo/cenarios/agua/chao.png" id="4_gb0bq"]
+[ext_resource type="Script" uid="uid://cnlb0itva3kow" path="res://jogo/cenarios/cenario.gd" id="5_8o545"]
+
+[sub_resource type="Resource" id="Resource_csuqy"]
+script = ExtResource("1_yno1u")
+textura = ExtResource("2_ar8qx")
+velocidade = 0.05
+altura = 135.0
+espelhar_ao_repetir = false
+
+[sub_resource type="Resource" id="Resource_lq72t"]
+script = ExtResource("1_yno1u")
+textura = ExtResource("3_ott2v")
+
+[sub_resource type="Resource" id="Resource_5j362"]
+script = ExtResource("1_yno1u")
+textura = ExtResource("4_gb0bq")
+velocidade = 1.0
+altura = -170.0
+
+[resource]
+script = ExtResource("5_8o545")
+nome = "Lago Congelado"
+ceu_topo = Color(0.3764706, 0.5803922, 0.9098039, 1)
+ceu_horizonte = Color(0.5411765, 0.7294118, 0.98039216, 1)
+altura_horizonte = 0.6
+camadas = Array[ExtResource("1_yno1u")]([SubResource("Resource_csuqy"), SubResource("Resource_lq72t"), SubResource("Resource_5j362")])
+particulas = 2
+cor_particulas = Color(0.85, 0.92, 1, 0.55)
+quantidade = 90

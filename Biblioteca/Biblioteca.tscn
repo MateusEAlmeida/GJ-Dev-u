@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://b776e0owy8bcj"]
 
 [ext_resource type="Script" uid="uid://1odvfs0j80uc" path="res://Biblioteca/biblioteca.gd" id="1_rfrq1"]
+[ext_resource type="VideoStream" uid="uid://bmkpd236k31tt" path="res://Menu/menu_animado.ogv" id="2_fvtul"]
 [ext_resource type="FontFile" uid="uid://bhsy0hkqq7q5o" path="res://Fontes/Fonte Titulo/CinzelDecorative-Bold.ttf" id="3_kah62"]
 [ext_resource type="FontFile" uid="uid://dab46nieig243" path="res://Fontes/Fonte Opções/Kalam/Kalam-Regular.ttf" id="4_afwvk"]
 
@@ -12,6 +13,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_rfrq1")
+video_fundo = ExtResource("2_fvtul")
 fonte_titulo = ExtResource("3_kah62")
 fonte_texto = ExtResource("4_afwvk")
 pasta_musicas = "res://Biblioteca/musicas"

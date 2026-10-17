@@ -1,11 +1,18 @@
 [gd_scene format=3 uid="uid://b8d5fyhhs02ny"]
 
 [ext_resource type="Script" uid="uid://cdqqfvx3egfck" path="res://jogo/player/character_body_2d.gd" id="1_en0u0"]
-[ext_resource type="Script" uid="uid://lghl27yrolbw" path="res://jogo/jogo.gd" id="1_ri866"]
+[ext_resource type="Script" uid="uid://c6468tmcnwpt5" path="res://jogo/jogo.gd" id="1_ri866"]
+[ext_resource type="FontFile" uid="uid://dab46nieig243" path="res://Fontes/Fonte Opções/Kalam/Kalam-Regular.ttf" id="2_ch246"]
 [ext_resource type="Texture2D" uid="uid://7l6r6riuapwm" path="res://jogo/sprites/mago_spritesheet.png" id="2_t1vgo"]
+[ext_resource type="PackedScene" uid="uid://gu7osc6h40sd" path="res://jogo/dragaoFogo/DragaoFogo.tscn" id="3_ch246"]
+[ext_resource type="PackedScene" uid="uid://da88eygiupf6h" path="res://jogo/dragaoAgua/DragaoAgua.tscn" id="4_b05l3"]
+[ext_resource type="PackedScene" uid="uid://bv00jtq2a33ot" path="res://jogo/dragaoTerra/DragaoTerra.tscn" id="5_bkx7t"]
+[ext_resource type="PackedScene" uid="uid://d2d4i8ck0acl1" path="res://jogo/dragaoAr/DragaoAr.tscn" id="6_qpvg1"]
+[ext_resource type="PackedScene" uid="uid://ckinqblaopbjo" path="res://jogo/dragaoAncestral/DragaoAncestral.tscn" id="7_8q6ba"]
+[ext_resource type="PackedScene" uid="uid://wewyf7gt76u4" path="res://jogo/dragaoDemonio/DragaoDemonio.tscn" id="8_lk57l"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_h018a"]
-size = Vector2(62, 64)
+size = Vector2(62, 56.5)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_en0u0"]
 atlas = ExtResource("2_t1vgo")
@@ -246,13 +253,18 @@ size = Vector2(1908, 67)
 
 [node name="Jogo" type="Node2D" unique_id=418937468]
 script = ExtResource("1_ri866")
+cena_menu = "uid://1uukelapucxm"
+fonte_hud = ExtResource("2_ch246")
+dragoes = Array[PackedScene]([ExtResource("3_ch246"), ExtResource("4_b05l3"), ExtResource("5_bkx7t"), ExtResource("6_qpvg1"), ExtResource("7_8q6ba"), ExtResource("8_lk57l")])
+segundos_ate_dragao = 3.0
 
 [node name="player" type="CharacterBody2D" parent="." unique_id=1177870846]
-position = Vector2(110, 121)
+position = Vector2(200, 940)
+scale = Vector2(2, 2)
 script = ExtResource("1_en0u0")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="player" unique_id=478248306]
-position = Vector2(0, 1)
+position = Vector2(0, 4.75)
 shape = SubResource("RectangleShape2D_h018a")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="player" unique_id=523246509]
@@ -262,6 +274,7 @@ sprite_frames = SubResource("SpriteFrames_t1vgo")
 animation = &"pulo"
 
 [node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1039935383]
+visible = false
 position = Vector2(127, 565)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=224928568]
