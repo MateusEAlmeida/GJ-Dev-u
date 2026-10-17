@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://da88eygiupf6h"]
 
 [ext_resource type="Script" uid="uid://c5a12orujvft7" path="res://jogo/dragao.gd" id="1_2fggr"]
+[ext_resource type="SpriteFrames" uid="uid://dbftys1ajjk44" path="res://jogo/dragaoAgua/dragao_agua_animacoes.tres" id="2_6gnls"]
 [ext_resource type="Texture2D" uid="uid://db2tfbwidx3q3" path="res://icones/fogo.png" id="2_r4d3c"]
 [ext_resource type="Texture2D" uid="uid://bkk3qpjklkfga" path="res://Biblioteca/artes/ataque_dragao.png" id="2_tk7x7"]
 [ext_resource type="Texture2D" uid="uid://cl3242wtp3bkv" path="res://jogo/player/ataque_fogo_mago.png" id="3_b8c80"]
@@ -11,6 +12,7 @@
 [ext_resource type="Texture2D" uid="uid://bw3jl2arlfs3y" path="res://Biblioteca/artes/ataque_terra_mago.png" id="5_sii2u"]
 [ext_resource type="Texture2D" uid="uid://buj11upij55pn" path="res://jogo/player/ataque_vento_mago.png" id="6_0vpcm"]
 [ext_resource type="Resource" uid="uid://d3d2ry0m7dghd" path="res://jogo/cenarios/agua/CenarioAgua.tres" id="11_dnt5l"]
+[ext_resource type="AudioStream" uid="uid://6gjibiiot4er" path="res://Biblioteca/musicas/Ecos_de_Cristal_Cavernas_Magicas.ogg" id="12_r4njx"]
 
 [node name="DragaoAgua" type="Node2D" unique_id=459963951]
 script = ExtResource("1_2fggr")
@@ -19,10 +21,13 @@ elemento_principal = 1
 resistencias = Array[int]([1])
 fraquezas = Array[int]([2])
 cor = Color(0.25, 0.55, 1, 1)
+sprite_frames = ExtResource("2_6gnls")
+escala = 7.0
 icones = Array[Texture2D]([ExtResource("2_r4d3c"), ExtResource("3_r4njx"), ExtResource("4_6gnls"), ExtResource("5_sfjca")])
 projetil_dragao = ExtResource("2_tk7x7")
 projeteis_jogador = Array[Resource]([ExtResource("3_b8c80"), ExtResource("4_d5gdq"), ExtResource("5_sii2u"), ExtResource("6_0vpcm")])
 cenario = ExtResource("11_dnt5l")
+musica_luta = ExtResource("12_r4njx")
 vida_maxima = 180.0
 tempo_resposta = 3.0
 sequencia_some = true

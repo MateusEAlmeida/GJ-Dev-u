@@ -28,7 +28,7 @@ signal marco_de_pontos(numero: int)   ## a cada 5000 pontos (para trocar o cená
 @export var velocidade_inicial: float = 480.0
 @export var velocidade_maxima: float = 1150.0
 @export var aceleracao: float = 9.0          ## quanto a velocidade sobe por segundo
-@export var vidas_maximas: int = 3
+@export var vidas_maximas: int = 5
 @export var tempo_invencivel: float = 1.2    ## depois de levar dano
 @export var acertos_por_multiplicador: int = 5
 @export var multiplicador_maximo: int = 5

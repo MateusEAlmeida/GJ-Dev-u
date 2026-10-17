@@ -1,14 +1,19 @@
 [gd_scene format=3 uid="uid://b8d5fyhhs02ny"]
 
 [ext_resource type="Script" uid="uid://cdqqfvx3egfck" path="res://jogo/player/character_body_2d.gd" id="1_en0u0"]
-[ext_resource type="Script" uid="uid://c6468tmcnwpt5" path="res://jogo/jogo.gd" id="1_ri866"]
+[ext_resource type="Script" uid="uid://bxsst5oxkce0y" path="res://jogo/jogo.gd" id="1_ri866"]
 [ext_resource type="FontFile" uid="uid://dab46nieig243" path="res://Fontes/Fonte Opções/Kalam/Kalam-Regular.ttf" id="2_ch246"]
 [ext_resource type="Texture2D" uid="uid://7l6r6riuapwm" path="res://jogo/sprites/mago_spritesheet.png" id="2_t1vgo"]
+[ext_resource type="Texture2D" uid="uid://b503832u0bhu2" path="res://Biblioteca/artes/pedra_alta.png" id="2_tv65q"]
+[ext_resource type="Texture2D" uid="uid://1inifj6aeqm6" path="res://Biblioteca/artes/pedra_larga.png" id="3_bgqau"]
 [ext_resource type="PackedScene" uid="uid://gu7osc6h40sd" path="res://jogo/dragaoFogo/DragaoFogo.tscn" id="3_ch246"]
 [ext_resource type="PackedScene" uid="uid://da88eygiupf6h" path="res://jogo/dragaoAgua/DragaoAgua.tscn" id="4_b05l3"]
+[ext_resource type="Texture2D" uid="uid://dp22hrowb0k44" path="res://Biblioteca/artes/pedra_media.png" id="4_lms8j"]
+[ext_resource type="Texture2D" uid="uid://c3o40vanrry7w" path="res://Biblioteca/artes/pedra_pequena.png" id="5_a3g5x"]
 [ext_resource type="PackedScene" uid="uid://bv00jtq2a33ot" path="res://jogo/dragaoTerra/DragaoTerra.tscn" id="5_bkx7t"]
 [ext_resource type="PackedScene" uid="uid://d2d4i8ck0acl1" path="res://jogo/dragaoAr/DragaoAr.tscn" id="6_qpvg1"]
 [ext_resource type="PackedScene" uid="uid://ckinqblaopbjo" path="res://jogo/dragaoAncestral/DragaoAncestral.tscn" id="7_8q6ba"]
+[ext_resource type="AudioStream" uid="uid://cc3geit2gd7c8" path="res://Biblioteca/musicas/Menu.mp3" id="7_bgqau"]
 [ext_resource type="PackedScene" uid="uid://wewyf7gt76u4" path="res://jogo/dragaoDemonio/DragaoDemonio.tscn" id="8_lk57l"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_h018a"]
@@ -254,9 +259,13 @@ size = Vector2(1908, 67)
 [node name="Jogo" type="Node2D" unique_id=418937468]
 script = ExtResource("1_ri866")
 cena_menu = "uid://1uukelapucxm"
+texturas_obstaculos = Array[Texture2D]([ExtResource("2_tv65q"), ExtResource("3_bgqau"), ExtResource("4_lms8j"), ExtResource("5_a3g5x")])
 fonte_hud = ExtResource("2_ch246")
+tempo_transicao = 4.0
+musica_corrida = ExtResource("7_bgqau")
+velocidade_maxima = 1300.0
 dragoes = Array[PackedScene]([ExtResource("3_ch246"), ExtResource("4_b05l3"), ExtResource("5_bkx7t"), ExtResource("6_qpvg1"), ExtResource("7_8q6ba"), ExtResource("8_lk57l")])
-segundos_ate_dragao = 3.0
+segundos_ate_dragao = 13.0
 
 [node name="player" type="CharacterBody2D" parent="." unique_id=1177870846]
 position = Vector2(200, 940)

@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://wewyf7gt76u4"]
 
 [ext_resource type="Script" uid="uid://c5a12orujvft7" path="res://jogo/dragao.gd" id="1_11ffj"]
+[ext_resource type="SpriteFrames" uid="uid://dtrjcrltb13ba" path="res://jogo/dragaoDemonio/dragao_demonio_animacoes.tres" id="2_oa7ja"]
 [ext_resource type="Texture2D" uid="uid://db2tfbwidx3q3" path="res://icones/fogo.png" id="2_q027h"]
 [ext_resource type="Texture2D" uid="uid://dhsndr6187w54" path="res://icones/agua.png" id="3_fshtu"]
 [ext_resource type="Texture2D" uid="uid://df01n71ktejbh" path="res://icones/terra.png" id="4_oa7ja"]
@@ -11,6 +12,7 @@
 [ext_resource type="Texture2D" uid="uid://bw3jl2arlfs3y" path="res://Biblioteca/artes/ataque_terra_mago.png" id="9_yucvk"]
 [ext_resource type="Texture2D" uid="uid://buj11upij55pn" path="res://jogo/player/ataque_vento_mago.png" id="10_6x6cq"]
 [ext_resource type="Resource" uid="uid://b2k8bt3xqsrub" path="res://jogo/cenarios/demonio/CenarioDemonio.tres" id="11_06aot"]
+[ext_resource type="AudioStream" uid="uid://m6jitcvw7100" path="res://Biblioteca/musicas/Mischievous_Steps_BOSS.mp3" id="12_fshtu"]
 
 [node name="DragaoDemonio" type="Node2D" unique_id=1905349585]
 script = ExtResource("1_11ffj")
@@ -19,10 +21,13 @@ chance_principal = 0.25
 resistencias = Array[int]([])
 fraquezas = Array[int]([])
 cor = Color(0.62, 0.06, 0.16, 1)
+sprite_frames = ExtResource("2_oa7ja")
+escala = 7.0
 icones = Array[Texture2D]([ExtResource("2_q027h"), ExtResource("3_fshtu"), ExtResource("4_oa7ja"), ExtResource("5_asx5r")])
 projetil_dragao = ExtResource("6_5xgbk")
 projeteis_jogador = Array[Resource]([ExtResource("7_bcvdp"), ExtResource("8_iq5f6"), ExtResource("9_yucvk"), ExtResource("10_6x6cq")])
 cenario = ExtResource("11_06aot")
+musica_luta = ExtResource("12_fshtu")
 vida_maxima = 360.0
 tamanho_sequencia = 6
 tamanho_sequencia_furioso = 8

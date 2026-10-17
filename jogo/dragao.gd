@@ -91,6 +91,8 @@ static func vence(e: int) -> int:
 @export_range(0.0, 1.0) var chance_ataque_duplo: float = 0.0   ## (Ar) chance de emendar uma 2ª sequência na hora
 @export var jeito_aleatorio: bool = false         ## (Ancestral/Demônio) cada ataque sorteia um jeito diferente
 @export var tempo_extra_por_icone: float = 0.4    ## tempo a mais por ícone além de 3
+@export var errou_recomeca: bool = true           ## errou uma tecla: a sequência volta do começo (o tempo NÃO volta)
+@export var trava_apos_erro: float = 0.15         ## teclas travadas por um instante depois de errar (evita "chutar")
 
 @export_group("Defesa do dragão")
 @export_range(0.1, 1.0, 0.05) var resistencia_geral: float = 1.0  ## multiplica o dano de TODAS as magias (Ancestral)
@@ -117,6 +119,7 @@ var tempo_total := 0.0
 var tempo_restante := 0.0
 var ataques_feitos := 0
 var magias_restantes := 0
+var travado_ate := 0.0
 var ataques_desde_roleta := 0
 
 # "jeito" do ataque atual (vem das opções acima, ou sorteado no Ancestral/Demônio)
@@ -225,6 +228,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	get_viewport().set_input_as_handled()
 	if estado == "atacando":
+		if tempo < travado_ate:
+			return
 		_responder(e)
 	elif estado == "aberto":
 		_lancar_magia(e)
@@ -305,23 +310,49 @@ func _responder(e: int) -> void:
 		_som(som_acerto, 1.0 + pos_seq * 0.08)       # cada acerto um pouco mais agudo
 	else:
 		erros += 1
+		_som(som_erro)
+		if errou_recomeca:
+			_recomecar_sequencia(icone)
+			return
 		if alvo == elemento_principal:
 			errou_principal = true
 		icone.modulate = Color(1.0, 0.3, 0.3, 0.9)
 		_tremer(icone)
-		_som(som_erro)
 	pos_seq += 1
 	if pos_seq >= seq.size():
 		_resolver_ataque(true)
 
 
+func _recomecar_sequencia(icone_errado: Control) -> void:
+	# Volta para o primeiro ícone; o tempo continua correndo.
+	pos_seq = 0
+	travado_ate = tempo + trava_apos_erro
+	var some_ja := atual_some and tempo_total - tempo_restante > tempo_ate_sumir
+	for c in linha_icones.get_children():
+		c.modulate = Color(1, 1, 1, 0.0 if some_ja else 1.0)
+	icone_errado.modulate = Color(1.0, 0.3, 0.3, 1.0)      # o errado pisca vermelho por um instante
+	var t := create_tween()
+	t.tween_interval(trava_apos_erro)
+	t.tween_callback(func():
+		if is_instance_valid(icone_errado) and estado == "atacando":
+			icone_errado.modulate = Color(1, 1, 1, 0.0 if (atual_some and tempo_total - tempo_restante > tempo_ate_sumir) else 1.0))
+	_tremer(caixa_seq)
+	var antes := lbl_status.text
+	lbl_status.text = "ERROU! DE NOVO!"
+	lbl_status.add_theme_color_override("font_color", Color(1, 0.45, 0.45))
+	get_tree().create_timer(0.6).timeout.connect(func():
+		if is_instance_valid(lbl_status) and lbl_status.text == "ERROU! DE NOVO!":
+			lbl_status.text = antes
+			lbl_status.add_theme_color_override("font_color", Color(1, 0.9, 0.7)))
+
+
 func _resolver_ataque(completou: bool) -> void:
-	var falhou := erros > 0 or not completou
+	var falhou := not completou or (erros > 0 and not errou_recomeca)
 	if not completou:
 		for i in range(pos_seq, seq.size()):
 			if seq[i] == elemento_principal:
 				errou_principal = true
-	var perfeito := not falhou and (tempo_total - tempo_restante) <= tempo_total * parte_do_tempo_para_perfeito
+	var perfeito := not falhou and erros == 0 and (tempo_total - tempo_restante) <= tempo_total * parte_do_tempo_para_perfeito
 	var acertados := seq.size()
 	caixa_seq.visible = false
 	var faz_duplo := duplo_pendente

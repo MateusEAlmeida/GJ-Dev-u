@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://c5a12orujvft7" path="res://jogo/dragao.gd" id="1_umbul"]
 [ext_resource type="Texture2D" uid="uid://db2tfbwidx3q3" path="res://icones/fogo.png" id="2_au0bu"]
+[ext_resource type="SpriteFrames" uid="uid://b7501uaoix45l" path="res://jogo/dragaoAr/dragao_ar_animacoes.tres" id="2_av5t8"]
 [ext_resource type="Texture2D" uid="uid://dhsndr6187w54" path="res://icones/agua.png" id="3_ahaee"]
 [ext_resource type="Texture2D" uid="uid://df01n71ktejbh" path="res://icones/terra.png" id="4_av5t8"]
 [ext_resource type="Texture2D" uid="uid://bdhctxibjet30" path="res://Biblioteca/artes/vento.png" id="5_kjv3i"]
@@ -11,6 +12,7 @@
 [ext_resource type="Texture2D" uid="uid://bw3jl2arlfs3y" path="res://Biblioteca/artes/ataque_terra_mago.png" id="9_6as20"]
 [ext_resource type="Texture2D" uid="uid://buj11upij55pn" path="res://jogo/player/ataque_vento_mago.png" id="10_md878"]
 [ext_resource type="Resource" uid="uid://co4tp616spo85" path="res://jogo/cenarios/ar/CenarioAr.tres" id="11_dkvid"]
+[ext_resource type="AudioStream" uid="uid://7cpq1iokhfwh" path="res://Biblioteca/musicas/Primeiro_feitico.ogg" id="12_ahaee"]
 
 [node name="DragaoAr" type="Node2D" unique_id=1856231950]
 script = ExtResource("1_umbul")
@@ -19,10 +21,12 @@ elemento_principal = 3
 resistencias = Array[int]([3])
 fraquezas = Array[int]([0])
 cor = Color(0.82, 0.93, 1, 1)
+sprite_frames = ExtResource("2_av5t8")
 icones = Array[Texture2D]([ExtResource("2_au0bu"), ExtResource("3_ahaee"), ExtResource("4_av5t8"), ExtResource("5_kjv3i")])
 projetil_dragao = ExtResource("6_5phh7")
 projeteis_jogador = Array[Resource]([ExtResource("7_ob6k7"), ExtResource("8_21iuv"), ExtResource("9_6as20"), ExtResource("10_md878")])
 cenario = ExtResource("11_dkvid")
+musica_luta = ExtResource("12_ahaee")
 vida_maxima = 200.0
 tamanho_sequencia = 4
 tamanho_sequencia_furioso = 5
