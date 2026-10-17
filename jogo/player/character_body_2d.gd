@@ -4,12 +4,12 @@ extends CharacterBody2D
 
 @export var velocidade: float = 420.0
 @export var forca_pulo: float = 820.0
-@export var gravidade_extra: float = 1.6     ## acima de 1 = pulo mais "seco", cai mais rápido
-@export var corte_pulo: float = 0.45         ## soltar o botão cedo = pulo mais baixo
-@export var modo_runner: bool = true         ## no runner ele está sempre correndo para a direita
+@export var gravidade_extra: float = 1.6
+@export var corte_pulo: float = 0.45
+@export var modo_runner: bool = true
 
-const COYOTE := 0.10   ## ainda dá para pular logo depois de sair da beirada
-const BUFFER := 0.12   ## apertar pulo um pouco antes de tocar o chão também vale
+const COYOTE := 0.10
+const BUFFER := 0.12
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
@@ -29,19 +29,22 @@ func _physics_process(delta: float) -> void:
 
 	var direcao := 0.0
 	if controle_ativo:
-		# Pulo (Espaço, Enter ou seta para cima)
+		# Pulo
 		pulo_guardado = maxf(pulo_guardado - delta, 0.0)
-		if Input.is_action_just_pressed("ui_accept") or Input.is_action_just_pressed("ui_up"):
+
+		if Input.is_action_just_pressed("jump"):
 			pulo_guardado = BUFFER
+
 		if pulo_guardado > 0.0 and tempo_no_ar <= COYOTE and velocity.y >= 0.0:
 			velocity.y = -forca_pulo
 			pulo_guardado = 0.0
 			tempo_no_ar = COYOTE + 1.0
+
 		# Soltou o botão no meio da subida: pulo mais curto
-		if velocity.y < 0.0 and (Input.is_action_just_released("ui_accept") or Input.is_action_just_released("ui_up")):
+		if velocity.y < 0.0 and Input.is_action_just_released("jump"):
 			velocity.y *= corte_pulo
 
-		direcao = Input.get_axis("ui_left", "ui_right")
+		direcao = Input.get_axis("left", "right")
 
 	if direcao:
 		velocity.x = direcao * velocidade
@@ -61,7 +64,7 @@ func morrer() -> void:
 
 
 func _atualizar_animacao(direcao: float) -> void:
-	# No runner, "parado" na verdade é correndo para a direita (o mundo é que se move).
+	# No runner, "parado" na verdade é correndo para a direita.
 	var dir_anim := direcao
 	if modo_runner and dir_anim == 0.0 and controle_ativo:
 		dir_anim = 1.0
