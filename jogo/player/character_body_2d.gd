@@ -1,46 +1,87 @@
 extends CharacterBody2D
+## Mago: movimento, pulo e animações.
+## Os números do pulo e da velocidade podem ser ajustados no Inspetor (nó player).
 
-const SPEED = 300.0
-const JUMP_VELOCITY = -400.0
+@export var velocidade: float = 420.0
+@export var forca_pulo: float = 820.0
+@export var gravidade_extra: float = 1.6     ## acima de 1 = pulo mais "seco", cai mais rápido
+@export var corte_pulo: float = 0.45         ## soltar o botão cedo = pulo mais baixo
+@export var modo_runner: bool = true         ## no runner ele está sempre correndo para a direita
+
+const COYOTE := 0.10   ## ainda dá para pular logo depois de sair da beirada
+const BUFFER := 0.12   ## apertar pulo um pouco antes de tocar o chão também vale
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
 var olhando_esquerda := false
+var controle_ativo := true
+var tempo_no_ar := 0.0
+var pulo_guardado := 0.0
 
 
 func _physics_process(delta: float) -> void:
+	# Gravidade
 	if not is_on_floor():
-		velocity += get_gravity() * delta
+		velocity += get_gravity() * gravidade_extra * delta
+		tempo_no_ar += delta
+	else:
+		tempo_no_ar = 0.0
 
-	if Input.is_action_just_pressed("ui_accept") and is_on_floor():
-		velocity.y = JUMP_VELOCITY
+	var direcao := 0.0
+	if controle_ativo:
+		# Pulo (Espaço, Enter ou seta para cima)
+		pulo_guardado = maxf(pulo_guardado - delta, 0.0)
+		if Input.is_action_just_pressed("ui_accept") or Input.is_action_just_pressed("ui_up"):
+			pulo_guardado = BUFFER
+		if pulo_guardado > 0.0 and tempo_no_ar <= COYOTE and velocity.y >= 0.0:
+			velocity.y = -forca_pulo
+			pulo_guardado = 0.0
+			tempo_no_ar = COYOTE + 1.0
+		# Soltou o botão no meio da subida: pulo mais curto
+		if velocity.y < 0.0 and (Input.is_action_just_released("ui_accept") or Input.is_action_just_released("ui_up")):
+			velocity.y *= corte_pulo
 
-	var direcao := Input.get_axis("ui_left", "ui_right")
+		direcao = Input.get_axis("ui_left", "ui_right")
+
 	if direcao:
-		velocity.x = direcao * SPEED
+		velocity.x = direcao * velocidade
 		olhando_esquerda = direcao < 0
 	else:
-		velocity.x = move_toward(velocity.x, 0, SPEED)
+		velocity.x = move_toward(velocity.x, 0, velocidade)
+		if modo_runner:
+			olhando_esquerda = false
 
 	move_and_slide()
 	_atualizar_animacao(direcao)
 
 
+func morrer() -> void:
+	controle_ativo = false
+	velocity.x = 0.0
+
+
 func _atualizar_animacao(direcao: float) -> void:
+	# No runner, "parado" na verdade é correndo para a direita (o mundo é que se move).
+	var dir_anim := direcao
+	if modo_runner and dir_anim == 0.0 and controle_ativo:
+		dir_anim = 1.0
+
 	var anim := ""
-	if not is_on_floor():
+	if not controle_ativo and is_on_floor():
+		anim = "parado"
+	elif not is_on_floor():
 		if velocity.y < 0:
-			if direcao < 0:
+			if dir_anim < 0:
 				anim = "pulo_esquerda"
-			elif direcao > 0:
+			elif dir_anim > 0:
 				anim = "pulo_direita"
 			else:
 				anim = "pulo"
 		else:
 			anim = "queda"
-	elif direcao < 0:
+	elif dir_anim < 0:
 		anim = "andar_esquerda"
-	elif direcao > 0:
+	elif dir_anim > 0:
 		anim = "andar_direita"
 	else:
 		anim = "parado"

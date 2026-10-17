@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://b8d5fyhhs02ny"]
 
-[ext_resource type="Script" uid="uid://bkoenbbivf46f" path="res://jogo/player/character_body_2d.gd" id="1_en0u0"]
+[ext_resource type="Script" uid="uid://cdqqfvx3egfck" path="res://jogo/player/character_body_2d.gd" id="1_en0u0"]
+[ext_resource type="Script" uid="uid://lghl27yrolbw" path="res://jogo/jogo.gd" id="1_ri866"]
 [ext_resource type="Texture2D" uid="uid://7l6r6riuapwm" path="res://jogo/sprites/mago_spritesheet.png" id="2_t1vgo"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_h018a"]
@@ -244,6 +245,7 @@ animations = [{
 size = Vector2(1908, 67)
 
 [node name="Jogo" type="Node2D" unique_id=418937468]
+script = ExtResource("1_ri866")
 
 [node name="player" type="CharacterBody2D" parent="." unique_id=1177870846]
 position = Vector2(110, 121)
