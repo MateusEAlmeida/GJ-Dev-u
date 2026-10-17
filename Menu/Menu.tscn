@@ -1,0 +1,65 @@
+[gd_scene format=3 uid="uid://1uukelapucxm"]
+
+[ext_resource type="Script" uid="uid://cqrflvh78l433" path="res://Menu/menu.gd" id="1_jf1j2"]
+[ext_resource type="AudioStream" uid="uid://jpgs7e37myr4" path="res://Menu/musica_menu.ogg" id="2_e56cd"]
+[ext_resource type="FontFile" uid="uid://bhsy0hkqq7q5o" path="res://Fontes/Fonte Titulo/CinzelDecorative-Bold.ttf" id="2_u03px"]
+[ext_resource type="FontFile" uid="uid://dab46nieig243" path="res://Fontes/Fonte Opções/Kalam/Kalam-Regular.ttf" id="3_crea4"]
+
+[node name="Menu" type="Control" unique_id=935048506]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_jf1j2")
+fonte_titulo = ExtResource("2_u03px")
+fonte_opcoes = ExtResource("3_crea4")
+cena_biblioteca = "uid://b776e0owy8bcj"
+musica_menu = ExtResource("2_e56cd")
+volume_musica_db = -10.5
+
+[node name="FundoProvisorio" type="ColorRect" parent="." unique_id=37291276]
+layout_mode = 0
+
+[node name="Fundo" type="VideoStreamPlayer" parent="." unique_id=750624725]
+layout_mode = 0
+
+[node name="Titulo" type="Label" parent="." unique_id=1433080190]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 90.0
+text = "Nome do Jogo"
+
+[node name="Opcoes" type="VBoxContainer" parent="." unique_id=853424006]
+layout_mode = 0
+offset_left = 170.0
+offset_top = 480.0
+offset_right = 600.0
+offset_bottom = 760.0
+
+[node name="Iniciar" type="Button" parent="Opcoes" unique_id=476504948]
+layout_mode = 2
+text = "Iniciar"
+
+[node name="Biblioteca" type="Button" parent="Opcoes" unique_id=822430795]
+layout_mode = 2
+text = "Biblioteca"
+
+[node name="Config" type="Button" parent="Opcoes" unique_id=1312512709]
+layout_mode = 2
+text = "Configurações"
+
+[node name="Sair" type="Button" parent="Opcoes" unique_id=211226863]
+layout_mode = 2
+text = "Sair"
+
+[node name="Seta" type="Label" parent="." unique_id=227291659]
+layout_mode = 0
+text = "»"
+
+[node name="Sublinhado" type="ColorRect" parent="." unique_id=1559646392]
+layout_mode = 0
+
+[node name="Fade" type="ColorRect" parent="." unique_id=1274039631]
+layout_mode = 0

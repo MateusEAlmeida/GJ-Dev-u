@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://b776e0owy8bcj"]
+
+[ext_resource type="Script" uid="uid://1odvfs0j80uc" path="res://Biblioteca/biblioteca.gd" id="1_rfrq1"]
+[ext_resource type="FontFile" uid="uid://bhsy0hkqq7q5o" path="res://Fontes/Fonte Titulo/CinzelDecorative-Bold.ttf" id="3_kah62"]
+[ext_resource type="FontFile" uid="uid://dab46nieig243" path="res://Fontes/Fonte Opções/Kalam/Kalam-Regular.ttf" id="4_afwvk"]
+
+[node name="Biblioteca" type="Control" unique_id=1402191560]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_rfrq1")
+fonte_titulo = ExtResource("3_kah62")
+fonte_texto = ExtResource("4_afwvk")
+pasta_musicas = "res://Biblioteca/musicas"
+pasta_artes = "res://Biblioteca/artes"
+cena_menu = "uid://1uukelapucxm"

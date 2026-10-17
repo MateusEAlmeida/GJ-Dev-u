@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://cx8pubtr2gop4"]
+
+[ext_resource type="Script" uid="uid://bmj7cqryhi776" path="res://Intro/intro.gd" id="1_x3b8t"]
+[ext_resource type="VideoStream" uid="uid://dxjyg5qtlm2dp" path="res://Intro/intro_equipe.ogv" id="2_k2o5b"]
+
+[node name="Intro" type="Control" unique_id=922075698]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_x3b8t")
+video_intro = ExtResource("2_k2o5b")
+proxima_cena = "uid://1uukelapucxm"
