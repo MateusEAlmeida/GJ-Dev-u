@@ -13,6 +13,7 @@ config_version=5
 config/name="immutable roots"
 run/main_scene="uid://cx8pubtr2gop4"
 config/features=PackedStringArray("4.7", "Forward Plus")
+config/icon="uid://dcjegvecr2pw5"
 
 [display]
 
@@ -48,3 +49,4 @@ jump={
 
 textures/canvas_textures/default_texture_filter=0
 rendering_device/driver.windows="d3d12"
+renderer/rendering_method="gl_compatibility"
