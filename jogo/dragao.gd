@@ -101,6 +101,13 @@ static func vence(e: int) -> int:
 @export var som_roleta: AudioStream               ## "tic" de cada passo da roleta
 @export var som_reflexo: AudioStream              ## magia refletida no mago
 
+@export_group("Influência no cenário")
+## Automático: Fogo/Água/Terra/Ar usam o próprio elemento; quem sorteia o jeito (Ancestral)
+## segue o jeito de cada ataque; quem tem roleta (Demônio) segue o elemento PROIBIDO.
+@export_enum("Automático", "Nenhuma", "Fogo", "Água", "Terra", "Ar", "Segue o jeito do ataque", "Segue a roleta") var influencia: int = 0
+@export_range(0.0, 2.0, 0.05) var forca_influencia: float = 1.0      ## 1 = normal, 0.5 = fraca, 1.5 = forte
+@export var duas_influencias_na_metade: bool = true                  ## (roleta) abaixo de metade da vida: duas ao mesmo tempo
+
 @export_group("Mundo durante a luta")
 @export_range(1.0, 2.0, 0.05) var acelerar_mundo: float = 1.0      ## obstáculos mais rápidos enquanto ele está vivo
 
@@ -172,6 +179,26 @@ func _ready() -> void:
 		jogo.set("velocidade_bonus", acelerar_mundo)
 	if roleta:
 		_criar_ui_roleta()
+	var modo := _modo_influencia()
+	if modo >= 2 and modo <= 5:
+		get_tree().create_timer(1.4).timeout.connect(func():      # entra junto com o dragão
+			if is_instance_valid(self) and estado != "morrendo":
+				_influenciar([modo - 2]))
+
+
+func _modo_influencia() -> int:
+	if influencia != 0:
+		return influencia
+	if roleta:
+		return 7
+	if jeito_aleatorio:
+		return 6
+	return 2 + int(elemento_principal)
+
+
+func _influenciar(lista: Array) -> void:
+	if jogo and jogo.has_method("definir_influencias"):
+		jogo.definir_influencias(lista, forca_influencia)
 
 
 func _process(delta: float) -> void:
@@ -265,6 +292,16 @@ func _novo_ataque(e_duplo: bool = false) -> void:
 			3: atual_pesado = true
 			4: chance_duplo = 1.0
 	duplo_pendente = not e_duplo and randf() < chance_duplo
+	if _modo_influencia() == 6 and not e_duplo:
+		# o cenário copia o dragão cujo "jeito" este ataque imita
+		var e := Elemento.FOGO
+		if atual_some:
+			e = Elemento.AGUA
+		elif atual_pesado:
+			e = Elemento.TERRA
+		elif atual_invertida or chance_duplo >= 1.0:
+			e = Elemento.AR
+		_influenciar([e])
 
 	tempo_total = tempo_resposta + tempo_extra_por_icone * (n - 3)
 	tempo_restante = tempo_total
@@ -491,6 +528,7 @@ func _receber_dano(valor: float, mult: float = 1.0) -> void:
 
 func _morrer() -> void:
 	estado = "morrendo"
+	_influenciar([])
 	caixa_seq.visible = false
 	if acelerar_mundo != 1.0:
 		jogo.set("velocidade_bonus", 1.0)
@@ -879,6 +917,12 @@ func _girar_roleta() -> void:
 		espera *= 1.14
 	t.tween_callback(func():
 		elemento_proibido = novo
+		if _modo_influencia() == 7:
+			var lista := [novo]
+			if duas_influencias_na_metade and vida < vida_maxima / 2.0:
+				var opcoes := [0, 1, 2, 3].filter(func(x): return x != novo and not ((x == Elemento.FOGO and novo == Elemento.AR) or (x == Elemento.AR and novo == Elemento.FOGO)))
+				lista.append(opcoes.pick_random())
+			_influenciar(lista)
 		icone_roleta.texture = tex_icones[novo]
 		x.visible = true
 		_pop(icone_roleta)

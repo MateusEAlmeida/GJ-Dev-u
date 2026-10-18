@@ -57,7 +57,7 @@ shader_type canvas_item;
 uniform vec4 cor_flash : source_color = vec4(1.0);
 uniform float forca : hint_range(0.0, 1.0) = 0.0;
 void fragment() {
-	vec4 c = texture(TEXTURE, UV) * COLOR;
+	vec4 c = COLOR;   // COLOR já vem com a cor da textura (multiplicar de novo escurecia o mago)
 	c.rgb = mix(c.rgb, cor_flash.rgb, forca);
 	COLOR = c;
 }
@@ -118,6 +118,7 @@ var painel_pausa: Control
 
 
 func _ready() -> void:
+	_acompanhar_monitor()
 	randomize()
 	Engine.time_scale = 1.0
 	# O Jogo continua recebendo teclas mesmo pausado; o player e os obstáculos pausam.
@@ -140,6 +141,7 @@ func _ready() -> void:
 	add_child(obstaculos)
 
 	_criar_pedrinhas()
+	_criar_influencias()
 	_criar_hud()
 	_criar_musica()
 	_iniciar_cenario()
@@ -207,6 +209,15 @@ func _physics_process(delta: float) -> void:
 
 	_checar_pouso()
 	_atualizar_hud()
+
+
+## O jogo se move no "passo de física" (60 por segundo por padrão). Num monitor de 144 Hz isso
+## faz o movimento parecer travado/engasgado. Aqui o passo acompanha a taxa do monitor.
+func _acompanhar_monitor() -> void:
+	var hz := DisplayServer.screen_get_refresh_rate()
+	if hz > 0.0:
+		Engine.physics_ticks_per_second = clampi(roundi(hz), 60, 240)
+		Engine.max_physics_steps_per_frame = 4
 
 
 # ================================================================ obstáculos
@@ -546,6 +557,30 @@ func _tex_risco(w: int, h: int) -> ImageTexture:
 	return ImageTexture.create_from_image(img)
 
 
+# ================================================================ influências do cenário
+
+var influencias: Node2D
+
+## Cria o nó que cuida das chamas / chão molhado / tremores / vento (influencias.gd, mesma pasta).
+func _criar_influencias() -> void:
+	var caminho: String = (get_script() as Script).resource_path.get_base_dir().path_join("influencias.gd")
+	if not ResourceLoader.exists(caminho):
+		push_warning("influencias.gd não encontrado em " + caminho)
+		return
+	influencias = Node2D.new()
+	influencias.name = "Influencias"
+	influencias.set_script(load(caminho))
+	influencias.set("jogo", self)
+	influencias.process_mode = Node.PROCESS_MODE_PAUSABLE
+	add_child(influencias)
+
+
+## O dragão chama isto. lista = elementos ativos (0 fogo, 1 água, 2 terra, 3 ar).
+func definir_influencias(lista: Array, forca: float = 1.0) -> void:
+	if influencias:
+		influencias.call("definir", lista, forca)
+
+
 # ================================================================ dragões
 
 func _chamar_dragao() -> void:
@@ -559,6 +594,7 @@ func _chamar_dragao() -> void:
 
 func _ao_derrotar_dragao() -> void:
 	dragao_atual = null
+	definir_influencias([])
 	velocidade_bonus = 1.0
 	# garante o cenário do próximo (caso o dragão não tenha avisado ao morrer)
 	var proximo := _cenario_do_dragao(indice_dragao + 1)
@@ -789,7 +825,14 @@ func _centralizado(l: Label) -> Label:
 	return l
 
 
+var _hud_ultimo := []
+
 func _atualizar_hud() -> void:
+	# Só reescreve os textos quando algo mudou (refazer texto todo quadro custa caro)
+	var agora := [int(pontos), recorde, combo, multiplicador, indice_dragao]
+	if agora == _hud_ultimo:
+		return
+	_hud_ultimo = agora
 	lbl_pontos.text = "%06d" % int(pontos)
 	lbl_recorde.text = "REC %06d" % maxi(recorde, int(pontos))
 	lbl_combo.text = ("COMBO %d   x%d" % [combo, multiplicador]) if combo > 0 else ""

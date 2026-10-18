@@ -6,11 +6,11 @@
 [ext_resource type="Texture2D" uid="uid://bkk3qpjklkfga" path="res://Biblioteca/artes/ataque_dragao.png" id="2_tk7x7"]
 [ext_resource type="Texture2D" uid="uid://cl3242wtp3bkv" path="res://jogo/player/ataque_fogo_mago.png" id="3_b8c80"]
 [ext_resource type="Texture2D" uid="uid://dhsndr6187w54" path="res://icones/agua.png" id="3_r4njx"]
-[ext_resource type="Texture2D" uid="uid://5c3ek0hfkfaf" path="res://Biblioteca/artes/terra.png" id="4_6gnls"]
 [ext_resource type="Texture2D" uid="uid://csayjnxy4elul" path="res://jogo/player/ataque_agua_mago.png" id="4_d5gdq"]
-[ext_resource type="Texture2D" uid="uid://bdhctxibjet30" path="res://Biblioteca/artes/vento.png" id="5_sfjca"]
+[ext_resource type="Texture2D" uid="uid://df01n71ktejbh" path="res://icones/terra.png" id="5_6gnls"]
 [ext_resource type="Texture2D" uid="uid://bw3jl2arlfs3y" path="res://Biblioteca/artes/ataque_terra_mago.png" id="5_sii2u"]
 [ext_resource type="Texture2D" uid="uid://buj11upij55pn" path="res://jogo/player/ataque_vento_mago.png" id="6_0vpcm"]
+[ext_resource type="Texture2D" uid="uid://bv1kgaq520fxy" path="res://icones/vento.png" id="6_sfjca"]
 [ext_resource type="Resource" uid="uid://d3d2ry0m7dghd" path="res://jogo/cenarios/agua/CenarioAgua.tres" id="11_dnt5l"]
 [ext_resource type="AudioStream" uid="uid://6gjibiiot4er" path="res://Biblioteca/musicas/Ecos_de_Cristal_Cavernas_Magicas.ogg" id="12_r4njx"]
 
@@ -23,7 +23,7 @@ fraquezas = Array[int]([2])
 cor = Color(0.25, 0.55, 1, 1)
 sprite_frames = ExtResource("2_6gnls")
 escala = 7.0
-icones = Array[Texture2D]([ExtResource("2_r4d3c"), ExtResource("3_r4njx"), ExtResource("4_6gnls"), ExtResource("5_sfjca")])
+icones = Array[Texture2D]([ExtResource("2_r4d3c"), ExtResource("3_r4njx"), ExtResource("5_6gnls"), ExtResource("6_sfjca")])
 projetil_dragao = ExtResource("2_tk7x7")
 projeteis_jogador = Array[Resource]([ExtResource("3_b8c80"), ExtResource("4_d5gdq"), ExtResource("5_sii2u"), ExtResource("6_0vpcm")])
 cenario = ExtResource("11_dnt5l")

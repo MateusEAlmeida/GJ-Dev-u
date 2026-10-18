@@ -9,7 +9,7 @@
 [ext_resource type="Texture2D" uid="uid://csayjnxy4elul" path="res://jogo/player/ataque_agua_mago.png" id="4_vb84f"]
 [ext_resource type="Texture2D" uid="uid://df01n71ktejbh" path="res://icones/terra.png" id="5_0d0vt"]
 [ext_resource type="Texture2D" uid="uid://bw3jl2arlfs3y" path="res://Biblioteca/artes/ataque_terra_mago.png" id="5_vbv3r"]
-[ext_resource type="Texture2D" uid="uid://bdhctxibjet30" path="res://Biblioteca/artes/vento.png" id="6_ht70l"]
+[ext_resource type="Texture2D" uid="uid://bv1kgaq520fxy" path="res://icones/vento.png" id="6_d18ys"]
 [ext_resource type="Texture2D" uid="uid://buj11upij55pn" path="res://jogo/player/ataque_vento_mago.png" id="6_wbi0p"]
 [ext_resource type="Resource" uid="uid://dp268syb71a5i" path="res://jogo/cenarios/ancestral/CenarioAncestral.tres" id="7_1c8v8"]
 [ext_resource type="AudioStream" uid="uid://crobnlswjg7pm" path="res://Biblioteca/musicas/Biblioteca_arcana.ogg" id="8_0ckyn"]
@@ -23,7 +23,7 @@ fraquezas = Array[int]([])
 cor = Color(0.95, 0.82, 0.38, 1)
 sprite_frames = ExtResource("2_vb84f")
 escala = 7.0
-icones = Array[Texture2D]([ExtResource("3_d18ys"), ExtResource("4_7oko8"), ExtResource("5_0d0vt"), ExtResource("6_ht70l")])
+icones = Array[Texture2D]([ExtResource("3_d18ys"), ExtResource("4_7oko8"), ExtResource("5_0d0vt"), ExtResource("6_d18ys")])
 projetil_dragao = ExtResource("2_sfqqw")
 projeteis_jogador = Array[Resource]([ExtResource("3_0ckyn"), ExtResource("4_vb84f"), ExtResource("5_vbv3r"), ExtResource("6_wbi0p")])
 cenario = ExtResource("7_1c8v8")

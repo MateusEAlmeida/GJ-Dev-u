@@ -4,8 +4,8 @@
 [ext_resource type="Texture2D" uid="uid://db2tfbwidx3q3" path="res://icones/fogo.png" id="2_1twsc"]
 [ext_resource type="SpriteFrames" uid="uid://bfnjsgwcrmylk" path="res://jogo/dragaoTerra/dragao_terra_animacoes.tres" id="2_sem5e"]
 [ext_resource type="Texture2D" uid="uid://dhsndr6187w54" path="res://icones/agua.png" id="3_bt2ig"]
-[ext_resource type="Texture2D" uid="uid://5c3ek0hfkfaf" path="res://Biblioteca/artes/terra.png" id="4_sem5e"]
-[ext_resource type="Texture2D" uid="uid://bdhctxibjet30" path="res://Biblioteca/artes/vento.png" id="5_p238r"]
+[ext_resource type="Texture2D" uid="uid://df01n71ktejbh" path="res://icones/terra.png" id="5_sem5e"]
+[ext_resource type="Texture2D" uid="uid://bv1kgaq520fxy" path="res://icones/vento.png" id="6_p238r"]
 [ext_resource type="Texture2D" uid="uid://bkk3qpjklkfga" path="res://Biblioteca/artes/ataque_dragao.png" id="6_tge5h"]
 [ext_resource type="Texture2D" uid="uid://cl3242wtp3bkv" path="res://jogo/player/ataque_fogo_mago.png" id="7_bblfl"]
 [ext_resource type="Texture2D" uid="uid://csayjnxy4elul" path="res://jogo/player/ataque_agua_mago.png" id="8_ca7dy"]
@@ -23,7 +23,7 @@ fraquezas = Array[int]([3])
 cor = Color(0.6, 0.42, 0.24, 1)
 sprite_frames = ExtResource("2_sem5e")
 escala = 7.0
-icones = Array[Texture2D]([ExtResource("2_1twsc"), ExtResource("3_bt2ig"), ExtResource("4_sem5e"), ExtResource("5_p238r")])
+icones = Array[Texture2D]([ExtResource("2_1twsc"), ExtResource("3_bt2ig"), ExtResource("5_sem5e"), ExtResource("6_p238r")])
 projetil_dragao = ExtResource("6_tge5h")
 projeteis_jogador = Array[Resource]([ExtResource("7_bblfl"), ExtResource("8_ca7dy"), ExtResource("9_q4obt"), ExtResource("10_seaif")])
 cenario = ExtResource("11_voskg")
