@@ -395,7 +395,7 @@ func _resolver_ataque(completou: bool) -> void:
 			t.tween_callback(func():
 				_impacto(bola.global_position, CORES[elemento_principal])
 				bola.queue_free()
-				_receber_dano(dano_reflexo * (1.0 + 0.25 * (acertados - 3))))
+				_receber_dano(dano_reflexo * (1.0 + 0.25 * (acertados - 3)), 1.5))
 		else:
 			t.tween_callback(func():
 				_som(som_defendido)
@@ -454,6 +454,8 @@ func _lancar_magia(e: int) -> void:
 	var bola := _projetil(arte, CORES[e], 20, false, magias_apontam_para_esquerda)
 	bola.global_position = jogo.player.global_position + Vector2(30, -40)
 	_som(som_magia, randf_range(0.95, 1.08))
+	if jogo.has_method("piscar_mago"):
+		jogo.piscar_mago(CORES[e])
 	var t := create_tween()
 	t.tween_property(bola, "global_position", global_position + Vector2(-60, randf_range(-50, 30)), 0.25)
 	t.tween_callback(func():
@@ -466,6 +468,13 @@ func _receber_dano(valor: float, mult: float = 1.0) -> void:
 	if estado == "morrendo":
 		return
 	vida -= valor
+	var onde := global_position + corpo.position + Vector2(randf_range(-50, 30), randf_range(-40, 20))
+	if jogo.has_method("explosao"):
+		jogo.explosao(onde, cor.lightened(0.2), 12 if mult <= 1.0 else 22, 240.0 if mult <= 1.0 else 340.0)
+	# pausa de impacto só no PERFEITO (fora da janela de magia). Na hora de apertar magia
+	# várias vezes seguidas, a pausa deixava o jogo com cara de travado.
+	if mult > 1.0 and estado != "aberto" and jogo.has_method("pausa_impacto"):
+		jogo.pausa_impacto()
 	var cor_num := Color(1, 0.85, 0.35) if mult > 1.0 else (Color(0.6, 0.6, 0.7) if mult < 1.0 else Color.WHITE)
 	var texto := "%d" % ceili(valor) + ("!" if mult > 1.0 else "")
 	_numero(texto, global_position + Vector2(randf_range(-60, 40), -120), cor_num)
@@ -878,6 +887,8 @@ func _girar_roleta() -> void:
 
 
 func _magia_refletida(e: int) -> void:
+	if jogo.has_method("piscar_mago"):
+		jogo.piscar_mago(CORES[e])
 	var arte: Resource = projeteis_jogador[e] if e < projeteis_jogador.size() else null
 	var bola := _projetil(arte, CORES[e], 20, false, magias_apontam_para_esquerda)
 	bola.global_position = jogo.player.global_position + Vector2(30, -40)

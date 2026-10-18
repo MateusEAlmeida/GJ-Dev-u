@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://gu7osc6h40sd"]
 
-[ext_resource type="Script" uid="uid://c5a12orujvft7" path="res://jogo/dragao.gd" id="1_db0mx"]
+[ext_resource type="Script" uid="uid://x5c2p68relju" path="res://jogo/dragao.gd" id="1_db0mx"]
 [ext_resource type="Texture2D" uid="uid://db2tfbwidx3q3" path="res://icones/fogo.png" id="2_epenr"]
 [ext_resource type="SpriteFrames" uid="uid://bxplfy6y7wpfi" path="res://jogo/dragaoFogo/dragao_fogo_animacoes.tres" id="2_r7ias"]
 [ext_resource type="Texture2D" uid="uid://dhsndr6187w54" path="res://icones/agua.png" id="3_bqrlf"]
