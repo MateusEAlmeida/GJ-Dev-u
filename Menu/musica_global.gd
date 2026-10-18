@@ -8,6 +8,7 @@ extends RefCounted
 ##   Musica.manter(get_tree(), reserva)              # continua o que estiver tocando (ou toca a reserva)
 ##   Musica.pausar(get_tree())  /  Musica.continuar(get_tree())
 ##   Musica.parar(get_tree())                        # ex.: ao entrar no jogo
+##   Musica.som_navegar(get_tree())                  # "tic" ao trocar de opção em qualquer tela
 
 const NOME := "MusicaGlobal"
 const MUDO := -40.0
@@ -111,3 +112,29 @@ static func parar(tree: SceneTree, fade: float = 0.8) -> void:
 	_fade(tree, MUDO, fade, func():
 		p.stop()
 		p.stream_paused = false)
+
+
+# ================================================================ som de navegação dos menus
+
+const SOM_NAVEGAR := "res://Menu/sfx_menu_select.wav"   ## troque o arquivo aqui se quiser outro som
+const VOLUME_NAVEGAR_DB := -2.0                          ## mais alto: aumente / mais baixo: diminua
+static var _som: AudioStreamPlayer
+
+
+## Toca o "tic" de trocar de opção (menu, configurações, pausa, fim de jogo, vitória, cartas...).
+static func som_navegar(tree: SceneTree) -> void:
+	if _som == null or not is_instance_valid(_som):
+		_som = AudioStreamPlayer.new()
+		_som.name = "SomNavegacao"
+		_som.process_mode = Node.PROCESS_MODE_ALWAYS
+		_som.max_polyphony = 4
+		_som.volume_db = VOLUME_NAVEGAR_DB
+		if ResourceLoader.exists(SOM_NAVEGAR):
+			_som.stream = load(SOM_NAVEGAR)
+		tree.root.add_child.call_deferred(_som)
+	if _som.stream == null:
+		return
+	if _som.is_inside_tree():
+		_som.play()
+	else:
+		_som.play.call_deferred()

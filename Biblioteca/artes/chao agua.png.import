@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://7l6r6riuapwm"
-path="res://.godot/imported/mago_spritesheet.png-c01110121574304b0852391a65681436.ctex"
+uid="uid://d4ctvv1p70gav"
+path="res://.godot/imported/chao agua.png-9bb1b6797b82d8caaa024e52bb6cd800.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://jogo/sprites/mago_spritesheet.png"
-dest_files=["res://.godot/imported/mago_spritesheet.png-c01110121574304b0852391a65681436.ctex"]
+source_file="res://Biblioteca/artes/chao agua.png"
+dest_files=["res://.godot/imported/chao agua.png-9bb1b6797b82d8caaa024e52bb6cd800.ctex"]
 
 [params]
 

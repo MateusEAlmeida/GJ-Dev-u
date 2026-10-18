@@ -10,7 +10,7 @@
 [ext_resource type="PackedScene" uid="uid://bv00jtq2a33ot" path="res://jogo/dragaoTerra/DragaoTerra.tscn" id="5_bkx7t"]
 [ext_resource type="PackedScene" uid="uid://d2d4i8ck0acl1" path="res://jogo/dragaoAr/DragaoAr.tscn" id="6_qpvg1"]
 [ext_resource type="PackedScene" uid="uid://ckinqblaopbjo" path="res://jogo/dragaoAncestral/DragaoAncestral.tscn" id="7_8q6ba"]
-[ext_resource type="AudioStream" uid="uid://cc3geit2gd7c8" path="res://Biblioteca/musicas/Menu.mp3" id="7_bgqau"]
+[ext_resource type="AudioStream" uid="uid://cc3geit2gd7c8" path="res://Biblioteca/musicas/Roots of Destiny.mp3" id="7_bgqau"]
 [ext_resource type="PackedScene" uid="uid://wewyf7gt76u4" path="res://jogo/dragaoDemonio/DragaoDemonio.tscn" id="8_lk57l"]
 [ext_resource type="Script" uid="uid://d0sn3urqkegah" path="res://jogo/player/character_body_2d.gd" id="13_lk57l"]
 [ext_resource type="SpriteFrames" uid="uid://ds4tuocejfog0" path="res://jogo/player/mago_novo/mago_novo_animacoes.tres" id="14_bgqau"]

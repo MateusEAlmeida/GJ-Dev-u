@@ -984,7 +984,7 @@ func _girar_roleta() -> void:
 		var mostrar := (anterior + 1 + i) % 4 if anterior >= 0 else i % 4
 		t.tween_callback(func():
 			icone_roleta.texture = tex_icones[mostrar]
-			_som(som_roleta, 1.0 + i * 0.02))
+			_som(som_roleta if som_roleta else som_acerto, (1.0 if som_roleta else 1.4) + i * 0.02))
 		t.tween_interval(espera)
 		espera *= 1.14
 	t.tween_callback(func():
@@ -1013,7 +1013,7 @@ func _magia_refletida(e: int) -> void:
 	var t := create_tween()
 	t.tween_property(bola, "global_position", bate, 0.22)
 	t.tween_callback(func():
-		_som(som_reflexo)
+		_som(som_reflexo if som_reflexo else som_mago_atingido)   # sem som próprio: usa o de levar dano
 		_numero("REFLETIDO!", bate + Vector2(-40, -80), Color(1, 0.35, 0.35))
 		_virar_projetil(bola, true, magias_apontam_para_esquerda))
 	t.tween_property(bola, "global_position", jogo.player.global_position + Vector2(0, -30), 0.25)

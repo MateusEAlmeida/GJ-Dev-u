@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://cc3geit2gd7c8"
+path="res://.godot/imported/Roots of Destiny.mp3-e60bb6bdceba3d469f358b5c30574240.mp3str"
+
+[deps]
+
+source_file="res://Biblioteca/musicas/Roots of Destiny.mp3"
+dest_files=["res://.godot/imported/Roots of Destiny.mp3-e60bb6bdceba3d469f358b5c30574240.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -199,8 +199,8 @@ func _selecionar(i: int, primeira := false) -> void:
 	if i == sel and not primeira:
 		return
 	sel = i
-	if som and not primeira:
-		som.play()
+	if not primeira:
+		_som_navegar()
 	for k in linhas.size():
 		var on := k == sel
 		var linha := linhas[k]
@@ -210,6 +210,13 @@ func _selecionar(i: int, primeira := false) -> void:
 		linha.get_node("Valor").modulate = Color.WHITE if on else Color(1, 1, 1, 0.6)
 		linha.pivot_offset = Vector2(0, linha.size.y / 2.0)
 		t.tween_property(linha, "scale", Vector2.ONE * (1.05 if on else 1.0), 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _som_navegar() -> void:
+	if som:
+		som.play()                                     # som próprio (campo Som Navegar)
+	else:
+		Musica.som_navegar(get_tree())                 # som padrão do jogo
 
 
 func _mudar(passo: int) -> void:
@@ -230,8 +237,7 @@ func _mudar(passo: int) -> void:
 	var t := create_tween()
 	t.tween_property(v, "scale", Vector2.ONE * 1.08, 0.06)
 	t.tween_property(v, "scale", Vector2.ONE, 0.12)
-	if som:
-		som.play()
+	_som_navegar()
 
 
 func _unhandled_input(event: InputEvent) -> void:

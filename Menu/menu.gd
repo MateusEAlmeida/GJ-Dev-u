@@ -7,6 +7,7 @@ extends Control
 @export_file("*.tscn") var cena_do_jogo: String = ""
 @export_file("*.tscn") var cena_biblioteca: String = "res://Biblioteca.tscn"
 @export_file("*.tscn") var cena_configuracoes: String = "res://Configuracoes/Configuracoes.tscn"
+@export_file("*.tscn") var cena_creditos: String = "res://Creditos/Creditos.tscn"
 @export var musica_menu: AudioStream
 @export_range(-40.0, 6.0, 0.5) var volume_musica_db: float = -6.0
 
@@ -46,6 +47,7 @@ func _ready() -> void:
 	for no in [fundo, fundo_provisorio, titulo, seta, sublinhado, fade]:
 		no.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
+	_criar_botao_creditos()
 	for filho in opcoes.get_children():
 		if filho is Button:
 			_configurar_botao(filho)
@@ -156,7 +158,8 @@ func _selecionar(b: Button) -> void:
 		return
 	var primeira_vez := selecionado == null
 	selecionado = b
-	_tocar("SomNavegar")
+	if not primeira_vez:
+		_tocar("SomNavegar")
 
 	if tween_selecao:
 		tween_selecao.kill()
@@ -204,6 +207,8 @@ func _largura_texto(b: Button) -> float:
 func _tocar(nome_do_no: String) -> void:
 	if has_node(nome_do_no):
 		get_node(nome_do_no).play()
+	elif nome_do_no == "SomNavegar":
+		Musica.som_navegar(get_tree())       # som padrão de trocar de opção
 
 func _on_iniciar() -> void:
 	if saindo:
@@ -242,6 +247,31 @@ func _on_config() -> void:
 	var t := create_tween()                     # a música continua nas configurações
 	t.tween_property(fade, "modulate:a", 1.0, 0.5)
 	t.tween_callback(func(): get_tree().change_scene_to_file(cena_configuracoes))
+
+
+## Botão "Créditos" (criado aqui, copiando o estilo do botão Sair, logo acima dele).
+func _criar_botao_creditos() -> void:
+	if has_node("Opcoes/Creditos") or not has_node("Opcoes/Sair") or not ResourceLoader.exists(cena_creditos):
+		if has_node("Opcoes/Creditos"):
+			$Opcoes/Creditos.pressed.connect(_on_creditos)
+		return
+	var b: Button = $Opcoes/Sair.duplicate()
+	b.name = "Creditos"
+	b.text = "Créditos"
+	opcoes.add_child(b)
+	opcoes.move_child(b, $Opcoes/Sair.get_index())
+	b.pressed.connect(_on_creditos)
+
+
+func _on_creditos() -> void:
+	if saindo:
+		return
+	saindo = true
+	_pulsar($Opcoes/Creditos)
+	_tocar("SomConfirmar")
+	var t := create_tween()                     # a música do menu continua nos créditos
+	t.tween_property(fade, "modulate:a", 1.0, 0.5)
+	t.tween_callback(func(): get_tree().change_scene_to_file(cena_creditos))
 
 
 func _on_sair() -> void:

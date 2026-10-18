@@ -314,6 +314,11 @@ func sortear(n: int) -> Array[Resource]:
 func oferecer(n: int = 3) -> void:
 	if escolhendo or jogo.acabou:
 		return
+	# o jogador pausou bem na hora: espera ele despausar antes de mostrar as cartas
+	while get_tree().paused:
+		await get_tree().process_frame
+		if jogo == null or jogo.acabou or escolhendo:
+			return
 	_ofertas = sortear(n)
 	if _ofertas.is_empty():
 		return
@@ -322,6 +327,7 @@ func oferecer(n: int = 3) -> void:
 	Engine.time_scale = 1.0
 	get_tree().paused = true
 	_sel = 0
+	_sel_anterior = -1
 	_criar_tela()
 	var tela: Vector2 = jogo.get_viewport_rect().size
 	var tw := create_tween()
@@ -507,7 +513,12 @@ func _faiscas(ui: Control, cor: Color, qtd: int) -> void:
 	get_tree().create_timer(1.2).timeout.connect(p.queue_free)
 
 
+var _sel_anterior := -1
+
 func _destacar() -> void:
+	if _sel_anterior != -1 and _sel != _sel_anterior:
+		preload("res://Menu/musica_global.gd").som_navegar(get_tree())
+	_sel_anterior = _sel
 	for i in _cartas_ui.size():
 		var ui := _cartas_ui[i]
 		var base: Vector2 = ui.get_meta("base")

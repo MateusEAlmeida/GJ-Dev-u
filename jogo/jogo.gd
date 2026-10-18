@@ -9,6 +9,7 @@ signal marco_de_pontos(numero: int)   ## a cada 5000 pontos (para trocar o cená
 
 @export_group("Cenas")
 @export_file("*.tscn") var cena_menu: String = "res://Menu/Menu.tscn"
+@export_file("*.tscn") var cena_creditos: String = "res://Creditos/Creditos.tscn"
 
 @export_group("Arte (opcional)")
 @export var texturas_obstaculos: Array[Texture2D] = []   ## vazio = obstáculos provisórios
@@ -139,6 +140,7 @@ var painel_pausa: Control
 
 
 const Config := preload("res://Configuracoes/config_global.gd")
+const SonsMenu := preload("res://Menu/musica_global.gd")   # "tic" ao trocar de opção
 
 func _ready() -> void:
 	Config.aplicar()                         # volumes e gráficos escolhidos nas Configurações
@@ -165,6 +167,8 @@ func _ready() -> void:
 	_esquentar_fonte()
 	_carregar_recorde()
 	recorde_no_inicio = recorde
+	tentativas += 1                               # conta esta partida (zera quando o jogador vence)
+	_salvar_recorde()
 	chao_y = _detectar_chao()
 
 	obstaculos = Node2D.new()
@@ -187,6 +191,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if get_tree().paused or acabou:
 		return
+	tempo_partida += delta
 
 	velocidade = minf(velocidade_maxima, velocidade + aceleracao * delta)
 	var andou := velocidade * velocidade_bonus * delta
@@ -679,6 +684,8 @@ func _chamar_dragao() -> void:
 	add_child(d)
 	dragao_atual = d
 	d.derrotado.connect(_ao_derrotar_dragao)
+	_inicio_luta = tempo_partida
+	_nome_luta = String(d.get("nome"))
 	var bencao := carta_valor("bencao")
 	if bencao > 0.0:
 		invencivel = maxf(invencivel, bencao)
@@ -687,6 +694,7 @@ func _chamar_dragao() -> void:
 
 func _ao_derrotar_dragao() -> void:
 	dragao_atual = null
+	tempos_dragoes.append([_nome_luta, tempo_partida - _inicio_luta])
 	definir_influencias([])
 	velocidade_bonus = 1.0
 	# garante o cenário do próximo (caso o dragão não tenha avisado ao morrer)
@@ -699,15 +707,153 @@ func _ao_derrotar_dragao() -> void:
 	if cartas:
 		cartas.call("ao_derrotar_dragao")
 	if indice_dragao >= dragoes.size():
-		_mostrar_aviso("VOCÊ VENCEU!", COR_DESTAQUE)   # (depois: tela de vitória)
+		_mostrar_aviso("VOCÊ VENCEU!", COR_DESTAQUE)
+		get_tree().create_timer(2.6, false).timeout.connect(_vitoria)   # false = espera se o jogo estiver pausado
 	elif cartas:
-		get_tree().create_timer(1.6).timeout.connect(func():
+		get_tree().create_timer(1.6, false).timeout.connect(func():       # false = não chega durante a pausa
 			if not acabou:
 				cartas.call("oferecer", cartas_por_escolha))
 
 
 func _texto_dragao(n: int) -> String:
 	return "Dragão %d de %d" % [n, maxi(dragoes.size(), n)]
+
+
+# ================================================================ vitória (derrotou o último dragão)
+
+var tempo_partida := 0.0          # segundos jogados (não conta pausa nem escolha de carta)
+var tempos_dragoes := []          # [nome, segundos de luta]
+var _inicio_luta := 0.0
+var _nome_luta := ""
+var tentativas := 0               # partidas desde a última vitória (salvo)
+var vitorias := 0
+var painel_vitoria: Control
+var opcoes_vitoria: Array[Button] = []
+
+
+func _tempo_txt(s: float) -> String:
+	var t := int(round(s))
+	return "%d:%02d" % [t / 60, t % 60]
+
+
+func _vitoria() -> void:
+	if acabou:
+		return
+	acabou = true
+	player.morrer()
+	definir_influencias([])
+	var final := int(pontos)
+	var tentativas_ate_zerar := tentativas
+	vitorias += 1
+	tentativas = 0
+	if final > recorde:
+		recorde = final
+	recorde_dragao = maxi(recorde_dragao, dragoes.size())
+	_salvar_recorde()
+
+	painel_vitoria = _painel_escuro()
+	(painel_vitoria as ColorRect).color = Color(0.04, 0.02, 0.08, 0.86)
+	var caixa := _caixa_central(painel_vitoria)
+	caixa.add_theme_constant_override("separation", 12)
+	var titulo := _titulo("Vitória!", tamanho_titulo_telas + 10)
+	caixa.add_child(titulo)
+	caixa.add_child(_centralizado(_label("Você derrotou aquele que não pode ser nomeado.", 38, COR_TEXTO)))
+	caixa.add_child(_espaco(10))
+
+	# estatísticas
+	caixa.add_child(_centralizado(_label("Tempo em cada dragão", 28, COR_DESTAQUE)))
+	var grade := GridContainer.new()
+	grade.columns = 2
+	grade.add_theme_constant_override("h_separation", 70)
+	grade.add_theme_constant_override("v_separation", 4)
+	for par in tempos_dragoes:
+		var n := _label(String(par[0]), 32, COR_APAGADA)
+		grade.add_child(n)
+		var v := _label(_tempo_txt(par[1]), 32, COR_TEXTO)
+		v.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		grade.add_child(v)
+	var centro := CenterContainer.new()
+	centro.add_child(grade)
+	caixa.add_child(centro)
+	caixa.add_child(_espaco(6))
+	var resumo := HBoxContainer.new()
+	resumo.alignment = BoxContainer.ALIGNMENT_CENTER
+	resumo.add_theme_constant_override("separation", 70)
+	for item in [["Tempo total", _tempo_txt(tempo_partida)], ["Pontos", str(final)],
+			["Tentativas até zerar", str(tentativas_ate_zerar)]]:
+		var col := VBoxContainer.new()
+		col.alignment = BoxContainer.ALIGNMENT_CENTER
+		col.add_child(_centralizado(_label(item[0], 28, COR_APAGADA)))
+		col.add_child(_centralizado(_label(item[1], 50, COR_DESTAQUE)))
+		resumo.add_child(col)
+	caixa.add_child(resumo)
+	caixa.add_child(_espaco(10))
+	caixa.add_child(_centralizado(_label("Obrigado por jogar!", 44, COR_TEXTO)))
+	caixa.add_child(_espaco(8))
+	opcoes_vitoria = _criar_opcoes(caixa, [
+		["Só mais uma vez!", _reiniciar],
+		["Voltar ao menu", _ir_para_menu],
+	])
+	_titulo_vitoria = titulo
+
+	# a música da luta some; primeiro passam os créditos, depois vem esta tela
+	for p in [musica_a, musica_b]:
+		if p.playing:
+			var tm := create_tween()
+			tm.tween_property(p, "volume_db", -60.0, 1.5)
+			tm.tween_callback(p.stop)
+	var cena: PackedScene = load(cena_creditos) if cena_creditos != "" and ResourceLoader.exists(cena_creditos) else null
+	if cena == null:
+		_mostrar_estatisticas()
+		return
+	var camada := CanvasLayer.new()
+	camada.layer = 40
+	add_child(camada)
+	var cred: Control = cena.instantiate()
+	cred.set("voltar_ao_menu_no_fim", false)        # no fim, avisa o jogo em vez de ir ao menu
+	camada.add_child(cred)
+	cred.connect("terminou", func():
+		camada.queue_free()
+		_mostrar_estatisticas())
+
+
+var _titulo_vitoria: Label
+
+## Tela de estatísticas (depois dos créditos): título cai, confete e as opções.
+func _mostrar_estatisticas() -> void:
+	var titulo := _titulo_vitoria
+	painel_vitoria.visible = true
+	painel_vitoria.modulate.a = 0.0
+	create_tween().tween_property(painel_vitoria, "modulate:a", 1.0, 0.8)
+	titulo.pivot_offset = Vector2(largura_tela / 2.0, 60)
+	titulo.scale = Vector2.ONE * 1.8
+	create_tween().tween_property(titulo, "scale", Vector2.ONE, 0.6).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_confete()
+	_ativar_opcoes(opcoes_vitoria)
+	await get_tree().create_timer(0.8).timeout
+	pode_reiniciar = true
+
+
+func _confete() -> void:
+	for i in 2:
+		var p := CPUParticles2D.new()
+		p.amount = 60
+		p.lifetime = 4.0
+		p.preprocess = 0.5
+		p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+		p.position = Vector2(largura_tela / 2.0, -20)
+		p.emission_rect_extents = Vector2(largura_tela / 2.0, 10)
+		p.direction = Vector2(0, 1)
+		p.spread = 25.0
+		p.gravity = Vector2(0, 120)
+		p.initial_velocity_min = 80.0
+		p.initial_velocity_max = 220.0
+		p.angular_velocity_min = -200.0
+		p.angular_velocity_max = 200.0
+		p.scale_amount_min = 5.0
+		p.scale_amount_max = 9.0
+		p.color = [COR_DESTAQUE, Color(0.75, 0.5, 1.0)][i]
+		painel_vitoria.add_child(p)
 
 
 # ================================================================ fim de jogo, pausa, recorde
@@ -802,12 +948,16 @@ func _carregar_recorde() -> void:
 	if cfg.load(ARQUIVO_RECORDE) == OK:
 		recorde = int(cfg.get_value("jogo", "recorde", 0))
 		recorde_dragao = int(cfg.get_value("jogo", "recorde_dragao", 0))
+		tentativas = int(cfg.get_value("jogo", "tentativas", 0))
+		vitorias = int(cfg.get_value("jogo", "vitorias", 0))
 
 
 func _salvar_recorde() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("jogo", "recorde", recorde)
 	cfg.set_value("jogo", "recorde_dragao", recorde_dragao)
+	cfg.set_value("jogo", "tentativas", tentativas)
+	cfg.set_value("jogo", "vitorias", vitorias)
 	cfg.save(ARQUIVO_RECORDE)
 
 
@@ -914,7 +1064,7 @@ func _criar_hud() -> void:
 	caixa.add_child(lbl_fim_dragao)
 	caixa.add_child(_espaco(36))
 	opcoes_fim = _criar_opcoes(caixa, [
-		["Tentar de novo", _reiniciar],
+		["Só mais uma vez!", _reiniciar],
 		["Voltar ao menu", _ir_para_menu],
 	])
 
@@ -1048,6 +1198,8 @@ func _selecionar_opcao(i: int, primeira := false) -> void:
 	if i == _sel_opcao and not primeira:
 		return
 	_sel_opcao = wrapi(i, 0, _opcoes_ativas.size())
+	if not primeira:
+		SonsMenu.som_navegar(get_tree())
 	for k in _opcoes_ativas.size():
 		var b := _opcoes_ativas[k]
 		var sel := k == _sel_opcao
@@ -1076,10 +1228,20 @@ func _confirmar_opcao(acao: Callable = Callable()) -> void:
 	var t := create_tween()
 	t.tween_property(b, "scale", Vector2.ONE * 1.25, 0.07)
 	t.tween_property(b, "scale", Vector2.ONE * 1.12, 0.1)
-	if acao == _reiniciar or acao == _ir_para_menu:
+	if acao == _reiniciar or acao == _ir_para_menu or acao == _ir_para_creditos:
 		_escolheu = true
 		t.tween_interval(0.08)
 	t.tween_callback(acao)
+
+
+func _ir_para_creditos() -> void:
+	if cena_creditos == "" or not ResourceLoader.exists(cena_creditos):
+		_ir_para_menu()
+		return
+	_escolheu = true
+	Engine.time_scale = 1.0
+	get_tree().paused = false
+	get_tree().change_scene_to_file(cena_creditos)
 
 
 func _reiniciar() -> void:

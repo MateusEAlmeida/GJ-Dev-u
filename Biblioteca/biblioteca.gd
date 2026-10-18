@@ -423,6 +423,8 @@ func _carregar(pasta: String, extensoes: Array) -> Array:
 
 
 func _destacar_item(b: Button, ligado: bool) -> void:
+	if ligado:
+		Musica.som_navegar(get_tree())
 	b.pivot_offset = Vector2(0, b.size.y / 2.0)
 	var t := create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	t.tween_property(b, "self_modulate", cor_texto if ligado else cor_apagada, 0.22)
@@ -450,6 +452,8 @@ func _atualizar_seta(delta: float) -> void:
 
 
 func _destacar_miniatura(b: Button, borda: ReferenceRect, ligado: bool) -> void:
+	if ligado:
+		Musica.som_navegar(get_tree())
 	borda.visible = ligado
 	b.pivot_offset = b.size / 2.0
 	b.z_index = 1 if ligado else 0
