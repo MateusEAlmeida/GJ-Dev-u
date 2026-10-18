@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://drngnkvi1ex5d"]
+
+[ext_resource type="Script" uid="uid://dqrm7o1tkox5h" path="res://jogo/Tutorial/tutorial.gd" id="1_fcpxt"]
+[ext_resource type="Texture2D" uid="uid://diphew8j0t61w" path="res://jogo/Tutorial/elementos.png" id="2_y11xq"]
+[ext_resource type="FontFile" uid="uid://bhsy0hkqq7q5o" path="res://Fontes/Fonte Titulo/CinzelDecorative-Bold.ttf" id="3_ub3nx"]
+[ext_resource type="FontFile" uid="uid://dab46nieig243" path="res://Fontes/Fonte Opções/Kalam/Kalam-Regular.ttf" id="4_x3y2a"]
+
+[node name="Tutorial" type="Control" unique_id=1614673588]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_fcpxt")
+cena_do_jogo = "uid://b8d5fyhhs02ny"
+imagem_elementos = ExtResource("2_y11xq")
+fonte_titulo = ExtResource("3_ub3nx")
+fonte_texto = ExtResource("4_x3y2a")

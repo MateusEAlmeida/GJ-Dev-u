@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://jogo/cartas/carta.gd" id="1"]
+[ext_resource type="Texture2D" path="res://jogo/cartas/icones/bencao.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = "bencao"
+nome = "Bênção"
+descricao = "Fica invencível por 4 s quando cada dragão aparece."
+raridade = 0
+icone = ExtResource("2")
+acumula = true
+valor = 4.0
+ativa = true

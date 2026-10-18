@@ -53,6 +53,7 @@ static func vence(e: int) -> int:
 @export_group("Cenário e música")
 @export var cenario: Resource              ## arraste aqui o Cenario do dragão (ex.: CenarioFogo.tres)
 @export var musica_luta: AudioStream       ## trilha da luta: entra no lugar da música da corrida
+@export_range(-30.0, 12.0, 0.5) var volume_musica_luta_db: float = 0.0   ## + aumenta / - diminui só a música deste dragão
 
 @export_group("Sons")
 @export var som_entrada: AudioStream       ## rugido quando ele aparece
@@ -67,7 +68,23 @@ static func vence(e: int) -> int:
 @export var som_magia: AudioStream         ## mago lança magia
 @export var som_dragao_atingido: AudioStream
 @export var som_morte: AudioStream
-@export_range(-30.0, 6.0, 0.5) var volume_sons_db: float = -4.0
+@export_range(-30.0, 6.0, 0.5) var volume_sons_db: float = -4.0   ## volume de TODOS os sons deste dragão
+
+@export_group("Volume de cada som (dB: 0 = normal, + mais alto, - mais baixo)")
+@export_range(-30.0, 12.0, 0.5) var vol_entrada: float = 0.0
+@export_range(-30.0, 12.0, 0.5) var vol_sequencia: float = 0.0
+@export_range(-30.0, 12.0, 0.5) var vol_acerto: float = 0.0
+@export_range(-30.0, 12.0, 0.5) var vol_erro: float = 0.0
+@export_range(-30.0, 12.0, 0.5) var vol_ataque: float = 0.0
+@export_range(-30.0, 12.0, 0.5) var vol_defendido: float = 0.0
+@export_range(-30.0, 12.0, 0.5) var vol_perfeito: float = 0.0
+@export_range(-30.0, 12.0, 0.5) var vol_mago_atingido: float = 0.0
+@export_range(-30.0, 12.0, 0.5) var vol_aberto: float = 0.0
+@export_range(-30.0, 12.0, 0.5) var vol_magia: float = 0.0
+@export_range(-30.0, 12.0, 0.5) var vol_dragao_atingido: float = 0.0
+@export_range(-30.0, 12.0, 0.5) var vol_morte: float = 0.0
+@export_range(-30.0, 12.0, 0.5) var vol_roleta: float = 0.0
+@export_range(-30.0, 12.0, 0.5) var vol_reflexo: float = 0.0
 
 @export_group("Luta")
 @export var vida_maxima: float = 160.0
@@ -101,6 +118,9 @@ static func vence(e: int) -> int:
 @export var som_roleta: AudioStream               ## "tic" de cada passo da roleta
 @export var som_reflexo: AudioStream              ## magia refletida no mago
 
+@export_group("Tela")
+@export var mostrar_legenda: bool = false    ## dica embaixo da tela (teclas e quem vence quem)
+
 @export_group("Influência no cenário")
 ## Automático: Fogo/Água/Terra/Ar usam o próprio elemento; quem sorteia o jeito (Ancestral)
 ## segue o jeito de cada ataque; quem tem roleta (Demônio) segue o elemento PROIBIDO.
@@ -128,6 +148,7 @@ var ataques_feitos := 0
 var magias_restantes := 0
 var travado_ate := 0.0
 var ataques_desde_roleta := 0
+var _perdoado := false
 
 # "jeito" do ataque atual (vem das opções acima, ou sorteado no Ancestral/Demônio)
 var atual_some := false
@@ -174,7 +195,7 @@ func _ready() -> void:
 	jogo._mostrar_aviso(nome.to_upper(), cor.lightened(0.3))
 	_som(som_entrada)
 	if musica_luta and jogo.has_method("trocar_musica"):
-		jogo.trocar_musica(musica_luta)
+		jogo.trocar_musica(musica_luta, 1.2, volume_musica_luta_db)
 	if acelerar_mundo != 1.0:
 		jogo.set("velocidade_bonus", acelerar_mundo)
 	if roleta:
@@ -303,7 +324,8 @@ func _novo_ataque(e_duplo: bool = false) -> void:
 			e = Elemento.AR
 		_influenciar([e])
 
-	tempo_total = tempo_resposta + tempo_extra_por_icone * (n - 3)
+	tempo_total = (tempo_resposta + tempo_extra_por_icone * (n - 3)) * (1.0 + _carta("ampulheta"))
+	_perdoado = false
 	tempo_restante = tempo_total
 	if not e_duplo:
 		ataques_feitos += 1
@@ -346,6 +368,22 @@ func _responder(e: int) -> void:
 		_pop(icone)
 		_som(som_acerto, 1.0 + pos_seq * 0.08)       # cada acerto um pouco mais agudo
 	else:
+		if _carta("perdao") > 0.0 and not _perdoado:
+			# carta Perdão: o 1º erro da sequência não conta (nem recomeça)
+			_perdoado = true
+			_som(som_erro, 1.3)
+			travado_ate = tempo + trava_apos_erro
+			icone.modulate = Color(1.0, 0.75, 0.3, 1.0)
+			_tremer(icone)
+			var antes := lbl_status.text
+			lbl_status.text = "PERDOADO!"
+			get_tree().create_timer(0.6).timeout.connect(func():
+				if is_instance_valid(lbl_status) and lbl_status.text == "PERDOADO!":
+					lbl_status.text = antes)
+			get_tree().create_timer(trava_apos_erro + 0.05).timeout.connect(func():
+				if is_instance_valid(icone) and estado == "atacando":
+					icone.modulate = Color(1, 1, 1, 0.0 if (atual_some and tempo_total - tempo_restante > tempo_ate_sumir) else 1.0))
+			return
 		erros += 1
 		_som(som_erro)
 		if errou_recomeca:
@@ -432,7 +470,7 @@ func _resolver_ataque(completou: bool) -> void:
 			t.tween_callback(func():
 				_impacto(bola.global_position, CORES[elemento_principal])
 				bola.queue_free()
-				_receber_dano(dano_reflexo * (1.0 + 0.25 * (acertados - 3)), 1.5))
+				_receber_dano(dano_reflexo * (1.0 + 0.25 * (acertados - 3)) * _bonus_perfeito(), 1.5))
 		else:
 			t.tween_callback(func():
 				_som(som_defendido)
@@ -446,7 +484,7 @@ func _resolver_ataque(completou: bool) -> void:
 func _abrir() -> void:
 	estado = "aberto"
 	timer = tempo_aberto
-	magias_restantes = magias_por_abertura
+	magias_restantes = magias_por_abertura + int(_carta("furia_arcana"))
 	_limpar_linha(linha_icones)
 	if roleta and elemento_proibido >= 0:
 		lbl_status.text = "ABERTO! ATAQUE!   NÃO use:"
@@ -487,9 +525,20 @@ func _lancar_magia(e: int) -> void:
 	elif e in resistencias:
 		mult = 0.5
 	mult *= resistencia_geral
+	var bonus: float = jogo.carta_mult_magia(e) if jogo.has_method("carta_mult_magia") else 1.0
+	_disparar_magia(e, mult, bonus)
+	# carta Eco: chance da magia sair em dobro
+	var eco: float = jogo.carta_valor("eco") if jogo.has_method("carta_valor") else 0.0
+	if eco > 0.0 and randf() < minf(eco, 1.0):
+		get_tree().create_timer(0.12).timeout.connect(func():
+			if is_instance_valid(self) and estado != "morrendo":
+				_disparar_magia(e, mult, bonus, Vector2(0, -36)))
+
+
+func _disparar_magia(e: int, mult: float, bonus: float, desvio: Vector2 = Vector2.ZERO) -> void:
 	var arte: Resource = projeteis_jogador[e] if e < projeteis_jogador.size() else null
 	var bola := _projetil(arte, CORES[e], 20, false, magias_apontam_para_esquerda)
-	bola.global_position = jogo.player.global_position + Vector2(30, -40)
+	bola.global_position = jogo.player.global_position + Vector2(30, -40) + desvio
 	_som(som_magia, randf_range(0.95, 1.08))
 	if jogo.has_method("piscar_mago"):
 		jogo.piscar_mago(CORES[e])
@@ -498,7 +547,15 @@ func _lancar_magia(e: int) -> void:
 	t.tween_callback(func():
 		_impacto(bola.global_position, CORES[e])
 		bola.queue_free()
-		_receber_dano(dano_magia * mult, mult))
+		_receber_dano(dano_magia * mult * bonus, mult))
+
+
+func _bonus_perfeito() -> float:
+	return 1.0 + (jogo.carta_valor("golpe_perfeito") if jogo.has_method("carta_valor") else 0.0)
+
+
+func _carta(id: String) -> float:
+	return jogo.carta_valor(id) if jogo.has_method("carta_valor") else 0.0
 
 
 func _receber_dano(valor: float, mult: float = 1.0) -> void:
@@ -562,18 +619,31 @@ func _checar_contato() -> void:
 
 # ================================================================ som e animação
 
+## Volume extra de cada som (campos "Volume de cada som" no Inspetor).
+func _volume_do_som(stream: AudioStream) -> float:
+	var pares := [[som_entrada, vol_entrada], [som_sequencia, vol_sequencia], [som_acerto, vol_acerto],
+		[som_erro, vol_erro], [som_ataque, vol_ataque], [som_defendido, vol_defendido],
+		[som_perfeito, vol_perfeito], [som_mago_atingido, vol_mago_atingido], [som_aberto, vol_aberto],
+		[som_magia, vol_magia], [som_dragao_atingido, vol_dragao_atingido], [som_morte, vol_morte],
+		[som_roleta, vol_roleta], [som_reflexo, vol_reflexo]]
+	for par in pares:
+		if par[0] == stream:
+			return par[1]
+	return 0.0
+
+
 func _som(stream: AudioStream, tom: float = 1.0) -> void:
 	if stream == null:
 		return
-	for p in players_som:
-		if not p.playing:
-			p.stream = stream
-			p.pitch_scale = tom
-			p.play()
-			return
-	players_som[0].stream = stream          # todos ocupados: reaproveita o primeiro
-	players_som[0].pitch_scale = tom
-	players_som[0].play()
+	var p: AudioStreamPlayer = players_som[0]          # todos ocupados: reaproveita o primeiro
+	for livre in players_som:
+		if not livre.playing:
+			p = livre
+			break
+	p.stream = stream
+	p.pitch_scale = tom
+	p.volume_db = volume_sons_db + _volume_do_som(stream)
+	p.play()
 
 
 func _animar(nome_anim: String) -> void:
@@ -739,7 +809,9 @@ func _criar_ui_tela() -> void:
 	barra_vida.size = Vector2(794, 12)
 	ui.add_child(barra_vida)
 
-	# Legenda: teclas e quem vence quem
+	# Legenda: teclas e quem vence quem (desligada: o tutorial explica)
+	if not mostrar_legenda:
+		return
 	var legenda := HBoxContainer.new()
 	legenda.position = Vector2(largura / 2 - 470, 1010)
 	legenda.add_theme_constant_override("separation", 14)

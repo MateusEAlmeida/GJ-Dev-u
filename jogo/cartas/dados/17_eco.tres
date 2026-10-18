@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://jogo/cartas/carta.gd" id="1"]
+[ext_resource type="Texture2D" path="res://jogo/cartas/icones/eco.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = "eco"
+nome = "Eco"
+descricao = "25% de chance de cada magia sair em dobro."
+raridade = 1
+icone = ExtResource("2")
+acumula = true
+valor = 0.25
+ativa = true

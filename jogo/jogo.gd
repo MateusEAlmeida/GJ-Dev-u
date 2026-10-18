@@ -14,7 +14,15 @@ signal marco_de_pontos(numero: int)   ## a cada 5000 pontos (para trocar o cená
 @export var texturas_obstaculos: Array[Texture2D] = []   ## vazio = obstáculos provisórios
 @export var escala_pixel_art: float = 5.0                ## mesma escala do mago
 @export var textura_coracao: Texture2D                   ## vazio = coração provisório
-@export var fonte_hud: Font
+@export var fonte_hud: Font                              ## vazio = Kalam-Regular
+
+@export_group("Fontes das telas de fim de jogo e pausa")
+@export var fonte_titulo: Font                           ## títulos (FIM DE JOGO / PAUSADO). Vazio = CinzelDecorative-Bold
+@export var fonte_opcoes: Font                           ## Tentar de novo / Voltar ao menu. Vazio = a mesma do HUD
+@export var tamanho_titulo_telas: int = 110
+@export var tamanho_opcoes: int = 54
+@export var tamanho_textos_fim: int = 34                 ## recorde e dragão alcançado
+@export_group("")
 
 @export_group("Cenário")
 @export var cenario_inicial: Resource        ## vazio = usa o cenário do primeiro dragão
@@ -37,8 +45,14 @@ signal marco_de_pontos(numero: int)   ## a cada 5000 pontos (para trocar o cená
 @export_group("Dragões")
 @export var dragoes: Array[PackedScene] = []     ## em ordem: Fogo, Água, Terra, Ar...
 @export var segundos_ate_dragao: float = 20.0    ## corrida antes de cada dragão aparecer
+@export var embaralhar_primeiros: int = 4        ## os N primeiros da lista vêm em ordem aleatória (0 = sempre na ordem). Os outros ficam no fim, na ordem.
 @export var espaco_extra_na_luta: float = 1.5    ## obstáculos mais espaçados durante a luta
 @export var bonus_por_dragao: int = 1000
+
+@export_group("Cartas")
+@export var usar_cartas: bool = true            ## escolhe uma carta depois de cada dragão
+@export var cartas_por_escolha: int = 3
+@export var carta_no_inicio: bool = false       ## também escolhe uma carta logo no começo da corrida
 
 @export_group("Efeitos (juice)")
 @export_range(0.0, 0.2, 0.01) var pausa_impacto_s: float = 0.05   ## congela o jogo um instante nos golpes fortes
@@ -50,6 +64,13 @@ signal marco_de_pontos(numero: int)   ## a cada 5000 pontos (para trocar o cená
 @export_group("Limites do jogador")
 @export var x_minimo: float = 40.0
 @export var x_maximo: float = 1880.0
+
+@export_group("Teste (só funciona rodando pelo editor)")
+## Arraste um dragão aqui (ex.: DragaoDemonio.tscn) para lutar SÓ contra ele, logo no começo.
+## No jogo exportado isto é ignorado, então não tem perigo de esquecer ligado.
+@export var testar_so_o_dragao: PackedScene
+@export var teste_vidas_infinitas: bool = false     ## nunca morre (para ver a luta inteira)
+@export_group("")
 
 const ARQUIVO_RECORDE := "user://recorde.cfg"
 const SHADER_FLASH := """
@@ -117,9 +138,20 @@ var lbl_fim_dragao: Label
 var painel_pausa: Control
 
 
+const Config := preload("res://Configuracoes/config_global.gd")
+
 func _ready() -> void:
+	Config.aplicar()                         # volumes e gráficos escolhidos nas Configurações
 	_acompanhar_monitor()
+	_carregar_fontes()
+	_parar_musica_do_menu()
 	randomize()
+	if testar_so_o_dragao and OS.has_feature("editor"):
+		var so: Array[PackedScene] = [testar_so_o_dragao]
+		dragoes = so
+		segundos_ate_dragao = 3.0
+		push_warning("MODO TESTE: só o dragão " + testar_so_o_dragao.resource_path.get_file())
+	_embaralhar_dragoes()
 	Engine.time_scale = 1.0
 	# O Jogo continua recebendo teclas mesmo pausado; o player e os obstáculos pausam.
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -143,6 +175,7 @@ func _ready() -> void:
 	_criar_pedrinhas()
 	_criar_influencias()
 	_criar_hud()
+	_criar_cartas()
 	_criar_musica()
 	_iniciar_cenario()
 	for i in dragoes.size():                       # deixa tudo lido já no começo
@@ -293,29 +326,40 @@ func _ao_tocar_obstaculo(corpo: Node2D, obstaculo: Area2D) -> void:
 	obstaculo.set_meta("passou", true)     # obstáculo que acertou não conta no combo
 	if invencivel > 0.0:
 		return
+	if cartas and cartas.call("usar_quebra", obstaculo):
+		_somar_combo()                       # quebrou a pedra: conta como passou
+		return
 	levar_dano()
 
 
 # ================================================================ vida, combo e pontos
 
 func levar_dano() -> void:
+	if cartas and cartas.call("absorver_dano"):
+		return
+	if teste_vidas_infinitas and OS.has_feature("editor"):
+		vidas += 1                           # modo teste: o dano acontece, mas a vida volta
 	vidas -= 1
 	combo = 0
 	multiplicador = 1
-	invencivel = tempo_invencivel
+	invencivel = tempo_invencivel * (2.0 if carta_valor("manto_etereo") > 0.0 else 1.0)
 	pausa_impacto(pausa_impacto_s * 1.6)
 	explosao(player.global_position + Vector2(0, -20), Color(1, 0.35, 0.4), 16, 280)
 	flash_mago(Color(1, 0.25, 0.3), 0.9, 0.3)
 	_tremer_tela()
 	_atualizar_vidas()
 	if vidas <= 0:
+		if cartas and cartas.call("tentar_reviver"):
+			return
 		_fim_de_jogo()
 
 
 func _somar_combo() -> void:
 	combo += 1
 	ganhar_pontos(pontos_por_obstaculo * multiplicador, player.global_position + Vector2(0, -90))
-	var novo := mini(multiplicador_maximo, 1 + combo / acertos_por_multiplicador)
+	var ima := int(carta_valor("ima_combo"))
+	var por_mult := maxi(1, ceili(acertos_por_multiplicador / (1.0 + ima)))
+	var novo := mini(multiplicador_maximo + ima, 1 + combo / por_mult)
 	if novo != multiplicador:
 		multiplicador = novo
 		_pulsar(lbl_combo)
@@ -340,11 +384,12 @@ func _criar_musica() -> void:
 	musica_b = AudioStreamPlayer.new()
 	for p in [musica_a, musica_b]:
 		p.volume_db = -60.0
+		p.bus = Config.bus_musica()          # volume da música separado do som geral
 		add_child(p)
 
 
 ## Troca a música com uma transição suave (os dragões chamam isto ao entrar).
-func trocar_musica(stream: AudioStream, duracao: float = 1.2) -> void:
+func trocar_musica(stream: AudioStream, duracao: float = 1.2, volume_extra_db: float = 0.0) -> void:
 	if stream == null:
 		return
 	stream.set("loop", true)
@@ -356,7 +401,7 @@ func trocar_musica(stream: AudioStream, duracao: float = 1.2) -> void:
 	entra.volume_db = -40.0
 	entra.play()
 	var t := create_tween().set_parallel(true)
-	t.tween_property(entra, "volume_db", volume_musica_db, duracao)
+	t.tween_property(entra, "volume_db", volume_musica_db + volume_extra_db, duracao)
 	if sai.playing:
 		t.tween_property(sai, "volume_db", -60.0, duracao)
 		t.chain().tween_callback(sai.stop)
@@ -481,11 +526,12 @@ func _ceu(c: Resource) -> TextureRect:
 
 
 func _particulas(c: Resource) -> CPUParticles2D:
-	if c.particulas == 0 or c.quantidade <= 0:
+	var qtd := int(c.quantidade * Config.fator_particulas())   # Gráficos: Mínimo sem, Médio metade
+	if c.particulas == 0 or qtd <= 0:
 		return null
 	var p := CPUParticles2D.new()
 	var tela := get_viewport_rect().size
-	p.amount = c.quantidade
+	p.amount = qtd
 	p.lifetime = 6.0
 	p.preprocess = 1.5
 	p.color = c.cor_particulas
@@ -557,6 +603,47 @@ func _tex_risco(w: int, h: int) -> ImageTexture:
 	return ImageTexture.create_from_image(img)
 
 
+# ================================================================ cartas
+
+var cartas: Node
+
+func _criar_cartas() -> void:
+	if not usar_cartas:
+		return
+	var caminho: String = (get_script() as Script).resource_path.get_base_dir().path_join("cartas/cartas.gd")
+	if not ResourceLoader.exists(caminho):
+		push_warning("cartas.gd não encontrado em " + caminho)
+		return
+	cartas = Node.new()
+	cartas.name = "Cartas"
+	cartas.set_script(load(caminho))
+	cartas.set("jogo", self)
+	add_child(cartas)
+	if carta_no_inicio:
+		get_tree().create_timer(1.2).timeout.connect(func(): cartas.call("oferecer", cartas_por_escolha))
+
+
+## Sorteia a ordem dos primeiros dragões (Fogo, Água, Terra, Ar); Ancestral e Demônio continuam no fim.
+func _embaralhar_dragoes() -> void:
+	var n := mini(embaralhar_primeiros, dragoes.size())
+	if n < 2:
+		return
+	var primeiros := dragoes.slice(0, n)
+	primeiros.shuffle()
+	var nova: Array[PackedScene] = []
+	nova.assign(primeiros + dragoes.slice(n))
+	dragoes = nova
+
+
+## Quanto vale o efeito de uma carta (0 se não tiver). Usado pelo dragão e pelo mago.
+func carta_valor(id: String) -> float:
+	return float(cartas.call("valor", id)) if cartas else 0.0
+
+
+func carta_mult_magia(elemento: int) -> float:
+	return float(cartas.call("mult_magia", elemento)) if cartas else 1.0
+
+
 # ================================================================ influências do cenário
 
 var influencias: Node2D
@@ -578,6 +665,8 @@ func _criar_influencias() -> void:
 ## O dragão chama isto. lista = elementos ativos (0 fogo, 1 água, 2 terra, 3 ar).
 func definir_influencias(lista: Array, forca: float = 1.0) -> void:
 	if influencias:
+		if carta_valor("pes_firmes") > 0.0:
+			forca *= 0.5
 		influencias.call("definir", lista, forca)
 
 
@@ -590,6 +679,10 @@ func _chamar_dragao() -> void:
 	add_child(d)
 	dragao_atual = d
 	d.derrotado.connect(_ao_derrotar_dragao)
+	var bencao := carta_valor("bencao")
+	if bencao > 0.0:
+		invencivel = maxf(invencivel, bencao)
+		flash_mago(Color(1, 0.9, 0.4), 0.8, 0.6)
 
 
 func _ao_derrotar_dragao() -> void:
@@ -603,8 +696,14 @@ func _ao_derrotar_dragao() -> void:
 	indice_dragao += 1
 	tempo_sem_dragao = 0.0
 	ganhar_pontos(bonus_por_dragao * indice_dragao, Vector2(largura_tela / 2.0, chao_y - 520), 72)
+	if cartas:
+		cartas.call("ao_derrotar_dragao")
 	if indice_dragao >= dragoes.size():
 		_mostrar_aviso("VOCÊ VENCEU!", COR_DESTAQUE)   # (depois: tela de vitória)
+	elif cartas:
+		get_tree().create_timer(1.6).timeout.connect(func():
+			if not acabou:
+				cartas.call("oferecer", cartas_por_escolha))
 
 
 func _texto_dragao(n: int) -> String:
@@ -645,35 +744,54 @@ func _fim_de_jogo() -> void:
 	await get_tree().create_timer(0.45).timeout
 	painel_fim.visible = true
 	painel_fim.modulate.a = 0.0
-	create_tween().tween_property(painel_fim, "modulate:a", 1.0, 0.25)
+	create_tween().tween_property(painel_fim, "modulate:a", 1.0, 0.3)
+	titulo_fim.pivot_offset = titulo_fim.size / 2.0
+	titulo_fim.scale = Vector2.ONE * 1.6
+	create_tween().tween_property(titulo_fim, "scale", Vector2.ONE, 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_ativar_opcoes(opcoes_fim)
 	pode_reiniciar = true
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	var menu_aberto := (acabou and pode_reiniciar) or (get_tree().paused and painel_pausa.visible)
+	if menu_aberto and event is InputEventKey and event.pressed and not event.echo:
+		var k: int = event.keycode
+		if k == KEY_UP or k == KEY_W:
+			_mover_opcao(-1)
+		elif k == KEY_DOWN or k == KEY_S:
+			_mover_opcao(1)
+		elif k == KEY_ENTER or k == KEY_KP_ENTER or k == KEY_SPACE:
+			_confirmar_opcao()
+		elif k == KEY_R and acabou:
+			_reiniciar()
+		elif k == KEY_ESCAPE:
+			if acabou:
+				_ir_para_menu()
+			else:
+				_pausar(false)
+		get_viewport().set_input_as_handled()
+		return
 	if acabou:
-		if not pode_reiniciar:
-			return
-		var apertou_r: bool = event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R
-		if event.is_action_pressed("ui_accept") or event.is_action_pressed("ui_up") or apertou_r:
-			get_viewport().set_input_as_handled()
-			get_tree().reload_current_scene()          # recomeça na hora
-		elif event.is_action_pressed("ui_cancel"):
-			_ir_para_menu()
 		return
 
+	if cartas and cartas.get("escolhendo"):
+		return
 	if event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
 		_pausar(not get_tree().paused)
-	elif get_tree().paused and event is InputEventKey and event.pressed and event.keycode == KEY_M:
-		_ir_para_menu()
 
 
 func _pausar(pausar: bool) -> void:
 	get_tree().paused = pausar
 	painel_pausa.visible = pausar
+	if pausar:
+		_ativar_opcoes(opcoes_pausa)
+	else:
+		_opcoes_ativas = []
 
 
 func _ir_para_menu() -> void:
+	_escolheu = true
 	Engine.time_scale = 1.0
 	get_tree().paused = false
 	get_tree().change_scene_to_file(cena_menu)
@@ -786,20 +904,188 @@ func _criar_hud() -> void:
 	# Tela de fim de jogo
 	painel_fim = _painel_escuro()
 	var caixa := _caixa_central(painel_fim)
-	caixa.add_child(_centralizado(_label("FIM DE JOGO", 96, COR_TEXTO)))
-	lbl_fim_pontos = _centralizado(_label("", 56, COR_TEXTO))
+	titulo_fim = _titulo("Fim de Jogo", tamanho_titulo_telas)
+	caixa.add_child(titulo_fim)
+	lbl_fim_pontos = _centralizado(_label("", 60, COR_TEXTO))
 	caixa.add_child(lbl_fim_pontos)
-	lbl_fim_recorde = _centralizado(_label("", 34, COR_APAGADA))
+	lbl_fim_recorde = _centralizado(_label("", tamanho_textos_fim, COR_APAGADA))
 	caixa.add_child(lbl_fim_recorde)
-	lbl_fim_dragao = _centralizado(_label("", 34, COR_TEXTO))
+	lbl_fim_dragao = _centralizado(_label("", tamanho_textos_fim - 2, COR_TEXTO))
 	caixa.add_child(lbl_fim_dragao)
-	caixa.add_child(_centralizado(_label("Espaço: tentar de novo     ·     Esc: menu", 28, COR_APAGADA)))
+	caixa.add_child(_espaco(36))
+	opcoes_fim = _criar_opcoes(caixa, [
+		["Tentar de novo", _reiniciar],
+		["Voltar ao menu", _ir_para_menu],
+	])
 
 	# Tela de pausa
 	painel_pausa = _painel_escuro()
 	var caixa_p := _caixa_central(painel_pausa)
-	caixa_p.add_child(_centralizado(_label("PAUSADO", 96, COR_TEXTO)))
-	caixa_p.add_child(_centralizado(_label("Esc: continuar     ·     M: menu", 28, COR_APAGADA)))
+	caixa_p.add_child(_titulo("Pausado", tamanho_titulo_telas))
+	caixa_p.add_child(_espaco(30))
+	opcoes_pausa = _criar_opcoes(caixa_p, [
+		["Continuar", func(): _pausar(false)],
+		["Recomeçar", _reiniciar],
+		["Voltar ao menu", _ir_para_menu],
+	])
+
+
+# ================================================================ opções (fim de jogo / pausa)
+
+var titulo_fim: Label
+var opcoes_fim: Array[Button] = []
+var opcoes_pausa: Array[Button] = []
+var _opcoes_ativas: Array[Button] = []
+var _sel_opcao := 0
+var _escolheu := false
+
+
+func _carregar_fontes() -> void:
+	if fonte_hud == null and ResourceLoader.exists("res://Fontes/Fonte Opções/Kalam/Kalam-Regular.ttf"):
+		fonte_hud = load("res://Fontes/Fonte Opções/Kalam/Kalam-Regular.ttf")
+	if fonte_titulo == null and ResourceLoader.exists("res://Fontes/Fonte Titulo/CinzelDecorative-Bold.ttf"):
+		fonte_titulo = load("res://Fontes/Fonte Titulo/CinzelDecorative-Bold.ttf")
+
+
+## A música do menu/tutorial (que passa entre as cenas) para quando o jogo começa.
+func _parar_musica_do_menu() -> void:
+	var m := get_tree().root.get_node_or_null("MusicaGlobal") as AudioStreamPlayer
+	if m and m.playing:
+		var t := get_tree().create_tween()
+		t.tween_property(m, "volume_db", -40.0, 0.8)
+		t.tween_callback(func():
+			m.stop()
+			m.autoplay = false)
+
+
+func _titulo(texto: String, tamanho: int) -> Label:
+	var l := _label(texto, tamanho, COR_DESTAQUE)
+	if fonte_titulo:
+		l.add_theme_font_override("font", fonte_titulo)
+	l.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.75))
+	l.add_theme_constant_override("shadow_offset_x", 4)
+	l.add_theme_constant_override("shadow_offset_y", 5)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	return l
+
+
+func _espaco(altura: float) -> Control:
+	var c := Control.new()
+	c.custom_minimum_size = Vector2(0, altura)
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return c
+
+
+## Cria opções de verdade: setas ↑ ↓ (ou W/S) escolhem, Enter/Espaço confirmam, mouse também.
+func _criar_opcoes(caixa: VBoxContainer, itens: Array) -> Array[Button]:
+	var lista: Array[Button] = []
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 6)
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	caixa.add_child(col)
+	for i in itens.size():
+		var linha := HBoxContainer.new()
+		linha.alignment = BoxContainer.ALIGNMENT_CENTER
+		linha.add_theme_constant_override("separation", 18)
+		col.add_child(linha)
+		var esq := _label("›", tamanho_opcoes, COR_DESTAQUE)
+		esq.name = "SetaEsq"
+		esq.modulate.a = 0.0
+		var b := Button.new()
+		b.text = itens[i][0]
+		b.focus_mode = Control.FOCUS_NONE
+		b.flat = true
+		var f_op: Font = fonte_opcoes if fonte_opcoes else fonte_hud
+		if f_op:
+			b.add_theme_font_override("font", f_op)
+		b.add_theme_font_size_override("font_size", tamanho_opcoes)
+		for nome in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color", "font_hover_pressed_color"]:
+			b.add_theme_color_override(nome, Color.WHITE)
+		b.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.6))
+		b.add_theme_constant_override("shadow_offset_x", 3)
+		b.add_theme_constant_override("shadow_offset_y", 3)
+		var vazio := StyleBoxEmpty.new()
+		for nome in ["normal", "hover", "pressed", "focus", "disabled", "hover_pressed"]:
+			b.add_theme_stylebox_override(nome, vazio)
+		b.custom_minimum_size = Vector2(440, 74)
+		b.self_modulate = COR_APAGADA
+		var dir := _label("‹", tamanho_opcoes, COR_DESTAQUE)
+		dir.name = "SetaDir"
+		dir.modulate.a = 0.0
+		linha.add_child(esq)
+		linha.add_child(b)
+		linha.add_child(dir)
+		var acao: Callable = itens[i][1]
+		var idx := i
+		b.mouse_entered.connect(func():
+			if _opcoes_ativas == lista:
+				_selecionar_opcao(idx))
+		b.pressed.connect(func():
+			if _opcoes_ativas == lista and not _escolheu:
+				_selecionar_opcao(idx)
+				_confirmar_opcao(acao))
+		b.set_meta("acao", acao)
+		lista.append(b)
+	return lista
+
+
+func _ativar_opcoes(lista: Array[Button]) -> void:
+	_opcoes_ativas = lista
+	_escolheu = false
+	_sel_opcao = 0
+	for i in lista.size():                       # entram uma depois da outra
+		var linha: Control = lista[i].get_parent()
+		linha.modulate.a = 0.0
+		var t := create_tween()
+		t.tween_interval(0.15 + i * 0.1)
+		t.tween_property(linha, "modulate:a", 1.0, 0.25)
+	_selecionar_opcao(0, true)
+
+
+func _selecionar_opcao(i: int, primeira := false) -> void:
+	if _opcoes_ativas.is_empty():
+		return
+	if i == _sel_opcao and not primeira:
+		return
+	_sel_opcao = wrapi(i, 0, _opcoes_ativas.size())
+	for k in _opcoes_ativas.size():
+		var b := _opcoes_ativas[k]
+		var sel := k == _sel_opcao
+		var linha: Control = b.get_parent()
+		b.pivot_offset = b.size / 2.0
+		var t := create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		t.tween_property(b, "self_modulate", COR_DESTAQUE if sel else COR_APAGADA, 0.2)
+		t.tween_property(b, "scale", Vector2.ONE * (1.12 if sel else 1.0), 0.25)
+		t.tween_property(linha.get_node("SetaEsq"), "modulate:a", 1.0 if sel else 0.0, 0.2)
+		t.tween_property(linha.get_node("SetaDir"), "modulate:a", 1.0 if sel else 0.0, 0.2)
+
+
+func _mover_opcao(passo: int) -> void:
+	if _escolheu or _opcoes_ativas.is_empty():
+		return
+	_selecionar_opcao(_sel_opcao + passo)
+
+
+func _confirmar_opcao(acao: Callable = Callable()) -> void:
+	if _escolheu or _opcoes_ativas.is_empty():
+		return
+	if not acao.is_valid():
+		acao = _opcoes_ativas[_sel_opcao].get_meta("acao")
+	var b := _opcoes_ativas[_sel_opcao]
+	b.pivot_offset = b.size / 2.0
+	var t := create_tween()
+	t.tween_property(b, "scale", Vector2.ONE * 1.25, 0.07)
+	t.tween_property(b, "scale", Vector2.ONE * 1.12, 0.1)
+	if acao == _reiniciar or acao == _ir_para_menu:
+		_escolheu = true
+		t.tween_interval(0.08)
+	t.tween_callback(acao)
+
+
+func _reiniciar() -> void:
+	Engine.time_scale = 1.0
+	get_tree().paused = false
+	get_tree().reload_current_scene()
 
 
 func _painel_escuro() -> Control:
@@ -987,6 +1273,7 @@ func _soltar_particula(pos: Vector2, cor: Color, quantidade: int, forca: float, 
 
 
 func explosao(pos: Vector2, cor: Color, quantidade: int = 14, forca: float = 260.0) -> void:
+	quantidade = maxi(3, int(quantidade * Config.fator_efeitos()))
 	_soltar_particula(pos, cor.lightened(0.25), quantidade, forca, Vector2(0, -1), 180.0, 700.0, 0.5, 4.0, 7.0, 1.0, 40)
 
 
@@ -996,7 +1283,7 @@ func _checar_pouso() -> void:
 	if no_chao and not _estava_no_chao and poeira_no_pouso:
 		var pe := Vector2(player.global_position.x, chao_y - 2)
 		for lado in [-1, 1]:
-			_soltar_particula(pe, cor_poeira, 8, 190.0, Vector2(lado, -0.35), 18.0, 300.0, 0.4, 5.0, 7.0, 0.9, 5)
+			_soltar_particula(pe, cor_poeira, maxi(3, int(8 * Config.fator_efeitos())), 190.0, Vector2(lado, -0.35), 18.0, 300.0, 0.4, 5.0, 7.0, 0.9, 5)
 	_estava_no_chao = no_chao
 
 

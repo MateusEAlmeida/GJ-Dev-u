@@ -6,6 +6,7 @@ extends Control
 @export var fonte_opcoes: Font
 @export_file("*.tscn") var cena_do_jogo: String = ""
 @export_file("*.tscn") var cena_biblioteca: String = "res://Biblioteca.tscn"
+@export_file("*.tscn") var cena_configuracoes: String = "res://Configuracoes/Configuracoes.tscn"
 @export var musica_menu: AudioStream
 @export_range(-40.0, 6.0, 0.5) var volume_musica_db: float = -6.0
 
@@ -33,8 +34,11 @@ var tempo := 0.0
 var tween_selecao: Tween
 var saindo := false
 var musica: AudioStreamPlayer
+const Musica := preload("res://Menu/musica_global.gd")   # música que continua entre as cenas
+const Config := preload("res://Configuracoes/config_global.gd")
 
 func _ready() -> void:
+	Config.aplicar()                         # volumes salvos nas Configurações
 	_configurar_fundo()
 	_configurar_textos()
 	_configurar_musica()
@@ -80,23 +84,12 @@ func _configurar_fundo() -> void:
 
 
 func _configurar_musica() -> void:
-	if musica_menu == null:
-		return
-	musica_menu.set("loop", true)         
-	musica = AudioStreamPlayer.new()
-	musica.name = "Musica"
-	musica.stream = musica_menu
-	musica.volume_db = -40.0
-	add_child(musica)
-	musica.play()
-	create_tween().tween_property(musica, "volume_db", volume_musica_db, 2.0) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	# Se já estiver tocando (voltou da biblioteca/tutorial), ela só continua, sem recomeçar.
+	Musica.tocar(get_tree(), musica_menu, volume_musica_db, 2.0)
 
 
 func _abaixar_musica(duracao: float) -> void:
-	if musica:
-		create_tween().tween_property(musica, "volume_db", -40.0, duracao) \
-			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	Musica.parar(get_tree(), duracao)
 
 
 func _configurar_textos() -> void:
@@ -221,8 +214,7 @@ func _on_iniciar() -> void:
 		push_warning("Escolha a cena do jogo no campo 'Cena Do Jogo' do nó Menu.")
 		return
 	saindo = true
-	_abaixar_musica(0.6)
-	var t := create_tween()
+	var t := create_tween()                     # a música continua (o jogo para ela quando começar)
 	t.tween_property(fade, "modulate:a", 1.0, 0.6)
 	t.tween_callback(func(): get_tree().change_scene_to_file(cena_do_jogo))
 
@@ -233,16 +225,23 @@ func _on_biblioteca() -> void:
 	_pulsar($Opcoes/Biblioteca)
 	_tocar("SomConfirmar")
 	saindo = true
-	_abaixar_musica(0.5)
-	var t := create_tween()
+	var t := create_tween()                     # a música continua na biblioteca
 	t.tween_property(fade, "modulate:a", 1.0, 0.5)
 	t.tween_callback(func(): get_tree().change_scene_to_file(cena_biblioteca))
 
 
 func _on_config() -> void:
+	if saindo:
+		return
 	_pulsar($Opcoes/Config)
 	_tocar("SomConfirmar")
-	print("Configurações: ainda não feito")
+	if cena_configuracoes == "" or not ResourceLoader.exists(cena_configuracoes):
+		push_warning("Escolha a cena de Configurações no campo 'Cena Configuracoes' do nó Menu.")
+		return
+	saindo = true
+	var t := create_tween()                     # a música continua nas configurações
+	t.tween_property(fade, "modulate:a", 1.0, 0.5)
+	t.tween_callback(func(): get_tree().change_scene_to_file(cena_configuracoes))
 
 
 func _on_sair() -> void:

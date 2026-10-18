@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://jogo/cartas/carta.gd" id="1"]
+[ext_resource type="Texture2D" path="res://jogo/cartas/icones/pocao.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = "pocao"
+nome = "Poção"
+descricao = "Cura todos os seus corações agora."
+raridade = 0
+icone = ExtResource("2")
+acumula = true
+valor = 0.0
+ativa = true

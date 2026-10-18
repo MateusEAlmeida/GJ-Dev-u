@@ -13,6 +13,18 @@
 [ext_resource type="Texture2D" uid="uid://buj11upij55pn" path="res://jogo/player/ataque_vento_mago.png" id="10_md878"]
 [ext_resource type="Resource" uid="uid://co4tp616spo85" path="res://jogo/cenarios/ar/CenarioAr.tres" id="11_dkvid"]
 [ext_resource type="AudioStream" uid="uid://7cpq1iokhfwh" path="res://Biblioteca/musicas/Primeiro_feitico.ogg" id="12_ahaee"]
+[ext_resource type="AudioStream" uid="uid://cww8hl2xjkg6l" path="res://Audio/SFX/Dragoes/rugido_ar.wav" id="14_2qb72"]
+[ext_resource type="AudioStream" uid="uid://dcou46r6f2cfe" path="res://Audio/SFX/Combate/som_sequencia.wav" id="15_hlor5"]
+[ext_resource type="AudioStream" uid="uid://b5k3f24lijvac" path="res://Audio/SFX/Combate/som_acerto.wav" id="16_uiych"]
+[ext_resource type="AudioStream" uid="uid://dgvba8lvdwtxf" path="res://Audio/SFX/Combate/som_erro.wav" id="17_k1q3d"]
+[ext_resource type="AudioStream" uid="uid://bvtvd6lxb25lx" path="res://Audio/SFX/Combate/som_ataque.wav" id="18_ly00x"]
+[ext_resource type="AudioStream" uid="uid://m8d37oeotywq" path="res://Audio/SFX/Combate/som_defendido.wav" id="19_lj2c0"]
+[ext_resource type="AudioStream" uid="uid://36s7spii8vf" path="res://Audio/SFX/Combate/som_perfeito.wav" id="20_osp02"]
+[ext_resource type="AudioStream" uid="uid://p64mydxrq0ad" path="res://Audio/SFX/Combate/som_mago_atingido.wav" id="21_j8r0j"]
+[ext_resource type="AudioStream" uid="uid://fu0oy0ohh4gq" path="res://Audio/SFX/Combate/som_dragao_vulneravel.wav" id="22_8jmoy"]
+[ext_resource type="AudioStream" uid="uid://c7vyb3sbwj2w4" path="res://Audio/SFX/Combate/som_magia.wav" id="23_nqkw3"]
+[ext_resource type="AudioStream" uid="uid://bmaqdsv8s2cnd" path="res://Audio/SFX/Combate/som_dragao_atingido.wav" id="24_kskrw"]
+[ext_resource type="AudioStream" uid="uid://c75hcivpehif5" path="res://Audio/SFX/Combate/som_morte.wav" id="25_b46n8"]
 
 [node name="DragaoAr" type="Node2D" unique_id=1856231950]
 script = ExtResource("1_umbul")
@@ -27,6 +39,30 @@ projetil_dragao = ExtResource("6_5phh7")
 projeteis_jogador = Array[Resource]([ExtResource("7_ob6k7"), ExtResource("8_21iuv"), ExtResource("9_6as20"), ExtResource("10_md878")])
 cenario = ExtResource("11_dkvid")
 musica_luta = ExtResource("12_ahaee")
+som_entrada = ExtResource("14_2qb72")
+som_sequencia = ExtResource("15_hlor5")
+som_acerto = ExtResource("16_uiych")
+som_erro = ExtResource("17_k1q3d")
+som_ataque = ExtResource("18_ly00x")
+som_defendido = ExtResource("19_lj2c0")
+som_perfeito = ExtResource("20_osp02")
+som_mago_atingido = ExtResource("21_j8r0j")
+som_aberto = ExtResource("22_8jmoy")
+som_magia = ExtResource("23_nqkw3")
+som_dragao_atingido = ExtResource("24_kskrw")
+som_morte = ExtResource("25_b46n8")
+volume_sons_db = -11.0
+vol_entrada = -10.0
+vol_sequencia = -13.0
+vol_acerto = -12.0
+vol_erro = -8.0
+vol_ataque = -8.0
+vol_defendido = -12.0
+vol_perfeito = -12.0
+vol_mago_atingido = -8.0
+vol_aberto = -8.0
+vol_magia = -15.0
+vol_dragao_atingido = -10.0
 vida_maxima = 200.0
 tamanho_sequencia = 4
 tamanho_sequencia_furioso = 5

@@ -40,6 +40,8 @@ var escorregadio := 0.0   ## 0 = normal, perto de 1 = gelo (Água)
 var vento := 0.0          ## empurra para os lados o tempo todo, em px/s (Ar: negativo = esquerda)
 var empurrao := 0.0       ## tranco que vai sumindo (ex.: encostou nas chamas)
 var _vx := 0.0            ## velocidade "das pernas", sem vento nem tranco
+var pulos_extras := 0     ## carta Pulo Duplo: pulos a mais no ar
+var _pulos_no_ar := 0
 
 
 func _ready() -> void:
@@ -84,11 +86,22 @@ func _physics_process(delta: float) -> void:
 		pulo_guardado = maxf(pulo_guardado - delta, 0.0)
 		if Input.is_action_just_pressed("ui_accept") or Input.is_action_just_pressed("ui_up"):
 			pulo_guardado = BUFFER
+		if is_on_floor():
+			_pulos_no_ar = pulos_extras
 		if pulo_guardado > 0.0 and tempo_no_ar <= COYOTE and velocity.y >= 0.0:
 			velocity.y = -forca_pulo
 			_deformar(Vector2(1.0 - esticar_no_pulo * 0.7, 1.0 + esticar_no_pulo))
 			pulo_guardado = 0.0
 			tempo_no_ar = COYOTE + 1.0
+		elif pulo_guardado > 0.0 and tempo_no_ar > COYOTE and _pulos_no_ar > 0:
+			# pulo duplo (carta): impulso um pouco menor + faíscas nos pés
+			_pulos_no_ar -= 1
+			velocity.y = -forca_pulo * 0.85
+			pulo_guardado = 0.0
+			_deformar(Vector2(1.0 - esticar_no_pulo * 0.7, 1.0 + esticar_no_pulo))
+			var jogo := get_parent()
+			if jogo and jogo.has_method("explosao"):
+				jogo.explosao(global_position + Vector2(0, 10), Color(0.55, 0.9, 1.0), 12, 220.0)
 		# Soltou o botão no meio da subida: pulo mais curto
 		if velocity.y < 0.0 and (Input.is_action_just_released("ui_accept") or Input.is_action_just_released("ui_up")):
 			velocity.y *= corte_pulo

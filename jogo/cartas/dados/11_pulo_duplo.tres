@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://jogo/cartas/carta.gd" id="1"]
+[ext_resource type="Texture2D" path="res://jogo/cartas/icones/pulo_duplo.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = "pulo_duplo"
+nome = "Pulo Duplo"
+descricao = "Você pode pular mais uma vez no ar."
+raridade = 1
+icone = ExtResource("2")
+acumula = false
+valor = 1.0
+ativa = true

@@ -36,6 +36,7 @@ var dica: Label
 var seta: Label
 var fade: ColorRect
 var player_fundo: AudioStreamPlayer
+const Musica := preload("res://Menu/musica_global.gd")   # mesma música do menu, sem recomeçar
 var player_musica: AudioStreamPlayer
 
 var botoes_inicio: Array[Button] = []
@@ -395,16 +396,10 @@ func _criar_fade() -> void:
 
 func _criar_audio() -> void:
 	player_musica = AudioStreamPlayer.new()
+	player_musica.bus = preload("res://Configuracoes/config_global.gd").bus_musica()
 	add_child(player_musica)
 	player_musica.finished.connect(_proxima_musica)
-	player_fundo = AudioStreamPlayer.new()
-	add_child(player_fundo)
-	if musica_fundo:
-		musica_fundo.set("loop", true)
-		player_fundo.stream = musica_fundo
-		player_fundo.volume_db = MUDO
-		player_fundo.play()
-		_fade_audio(player_fundo, volume_db, 1.5)
+	Musica.manter(get_tree(), musica_fundo, volume_db)   # continua a música do menu, sem recomeçar
 
 func _carregar(pasta: String, extensoes: Array) -> Array:
 	var recursos: Array = []
@@ -479,12 +474,11 @@ func _mostrar_tela(qual: Tela) -> void:
 	_atualizar_textos()
 
 	if qual == Tela.PLAYLIST:
-		_fade_audio(player_fundo, MUDO, 0.4, true)
+		Musica.pausar(get_tree(), 0.4)
 		musica_atual = -1
 	elif anterior == Tela.PLAYLIST:
 		_fade_audio(player_musica, MUDO, 0.4)
-		player_fundo.stream_paused = false
-		_fade_audio(player_fundo, volume_db, 1.0)
+		Musica.continuar(get_tree(), 1.0)
 
 	match qual:
 		Tela.INICIO:
@@ -545,8 +539,8 @@ func _voltar_ao_menu() -> void:
 	if ocupado:
 		return
 	ocupado = true
-	_fade_audio(player_fundo, MUDO, 0.5)
 	_fade_audio(player_musica, MUDO, 0.5)
+	Musica.continuar(get_tree(), 0.8)          # se estava pausada na playlist, volta para o menu tocando
 	var t := create_tween()
 	t.tween_property(fade, "modulate:a", 1.0, 0.5)
 	t.tween_callback(func(): get_tree().change_scene_to_file(cena_menu))
